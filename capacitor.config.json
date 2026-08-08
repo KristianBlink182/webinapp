@@ -1,0 +1,12 @@
+{
+  "appId": "com.livo.vecino",
+  "appName": "LIVO Vecinos",
+  "webDir": "public",
+  "server": {
+    "url": "https://vecino.livo.com.pe",
+    "cleartext": true
+  },
+  "ios": {
+    "contentInset": "always"
+  }
+}

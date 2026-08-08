@@ -1,0 +1,1 @@
+<link rel="stylesheet" href="{{ asset('css/custom.css') }}?v=1786133300">

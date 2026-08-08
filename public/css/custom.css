@@ -1,0 +1,353 @@
+/* ==========================================================================
+   LIVO ADMIN - MODERN SAAS THEMING SYSTEM
+   ========================================================================== */
+
+/* 1. Tarjetas del Dashboard y Secciones (Bordes Suaves y Sombras Floating) */
+.fi-wi-stats-overview-stat,
+.fi-section,
+.fi-ta-content {
+    border-radius: 1.25rem !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25) !important;
+    transition: all 0.25s ease-in-out !important;
+}
+
+.dark .fi-wi-stats-overview-stat:hover,
+.dark .fi-section:hover {
+    border-color: rgba(99, 102, 241, 0.35) !important;
+    transform: translateY(-2px) !important;
+}
+
+/* 2. Barra Lateral (Sidebar) Moderna estilo App */
+.fi-sidebar {
+    border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.fi-sidebar-item-active a {
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.25) 0%, rgba(99, 102, 241, 0.1) 100%) !important;
+    border-left: 4px solid #6366f1 !important;
+    border-radius: 0.75rem !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+}
+
+.fi-sidebar-group-label {
+    font-size: 0.68rem !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+    font-weight: 800 !important;
+    color: #818cf8 !important;
+    padding-top: 1rem !important;
+}
+
+/* 3. Tablas Estilo SaaS */
+.fi-ta-header-cell {
+    font-size: 0.75rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    font-weight: 800 !important;
+    color: #94a3b8 !important;
+}
+
+.fi-ta-row {
+    transition: background-color 0.15s ease !important;
+}
+
+.dark .fi-ta-row:hover {
+    background-color: rgba(99, 102, 241, 0.06) !important;
+}
+
+/* 4. Badges (Etiquetas) Píldora */
+.fi-badge {
+    border-radius: 9999px !important;
+    padding: 0.25rem 0.75rem !important;
+    font-weight: 800 !important;
+    font-size: 0.75rem !important;
+}
+
+/* 5. Botones Principales */
+.fi-btn-primary {
+    border-radius: 0.875rem !important;
+    font-weight: 800 !important;
+    box-shadow: 0 10px 20px -5px rgba(79, 70, 229, 0.4) !important;
+    transition: all 0.2s ease !important;
+}
+
+.fi-btn-primary:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 12px 25px -5px rgba(79, 70, 229, 0.5) !important;
+}
+/* ==========================================================================
+   6. PORTADAS Y PANTALLAS DE INICIO DE SESIÓN (LOGIN) - LIVO THEME
+   ========================================================================== */
+
+/* Fondo Oscuro Neón con Destellos */
+.fi-simple-layout {
+    background-color: #060913 !important;
+    background-image: 
+        radial-gradient(circle at 15% 15%, rgba(14, 165, 233, 0.18) 0%, transparent 45%),
+        radial-gradient(circle at 85% 85%, rgba(124, 58, 237, 0.18) 0%, transparent 45%) !important;
+    min-height: 100vh !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* Tarjeta Principal de Login (Efecto Cristal Glassmorphism) */
+.fi-simple-main {
+    background: rgba(12, 22, 38, 0.9) !important;
+    border: 1px solid rgba(14, 165, 233, 0.25) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border-radius: 1.5rem !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 30px rgba(14, 165, 233, 0.15) !important;
+    padding: 2.25rem !important;
+    max-width: 440px !important;
+    width: 100% !important;
+    margin: auto !important;
+}
+
+/* Título y Subtítulos */
+.fi-simple-main h2, 
+.fi-simple-main h1 {
+    color: #ffffff !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.02em !important;
+}
+
+.fi-simple-main label {
+    color: #94a3b8 !important;
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+}
+
+/* Campos de Texto Oscuros */
+.fi-simple-main .fi-input-wrp {
+    background-color: rgba(15, 23, 42, 0.7) !important;
+    border: 1px solid rgba(51, 65, 85, 0.8) !important;
+    border-radius: 0.85rem !important;
+    transition: all 0.2s ease !important;
+}
+
+.fi-simple-main .fi-input-wrp:focus-within {
+    border-color: #38bdf8 !important;
+    box-shadow: 0 0 15px rgba(56, 189, 248, 0.3) !important;
+}
+
+/* Botón Principal (Entrar) */
+.fi-simple-main button[type="submit"] {
+    background: linear-gradient(135deg, #0284c7 0%, #4f46e5 100%) !important;
+    border: 1px solid rgba(56, 189, 248, 0.4) !important;
+    border-radius: 0.85rem !important;
+    color: #ffffff !important;
+    font-weight: 800 !important;
+    font-size: 0.9rem !important;
+    padding: 0.85rem 1.5rem !important;
+    box-shadow: 0 10px 20px -5px rgba(2, 132, 199, 0.5) !important;
+    transition: all 0.2s ease !important;
+}
+
+.fi-simple-main button[type="submit"]:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 15px 25px -5px rgba(2, 132, 199, 0.7) !important;
+}
+/* ==========================================================================
+   6. PORTADAS Y SPLIT SCREEN NATIVO LIVO (DESKTOP Y MÓVIL)
+   ========================================================================== */
+
+/* FONDO GENERAL OSCURO */
+.fi-simple-layout {
+    background-color: #060913 !important;
+    min-height: 100vh !important;
+    width: 100vw !important;
+    overflow: hidden !important;
+}
+
+/* EN PANTALLA DE PC Y LAPTOP (>= 1024px) */
+@media (min-width: 1024px) {
+    /* LADO IZQUIERDO: BANNER DE BIENVENIDA FIJO AL 50% */
+    .livo-left-banner-container {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 50vw !important;
+        height: 100vh !important;
+        z-index: 100 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: space-between !important;
+        padding: 4rem !important;
+        background: linear-gradient(135deg, #060913 0%, #0c203b 50%, #060913 100%) !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+        box-sizing: border-box !important;
+    }
+
+    /* LADO DERECHO: FORMULARIO FIJO AL 50% Y CENTRADO */
+    .fi-simple-main {
+        position: fixed !important;
+        top: 0 !important;
+        right: 0 !important;
+        width: 50vw !important;
+        height: 100vh !important;
+        max-width: 50vw !important;
+        z-index: 100 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 2rem !important;
+        box-sizing: border-box !important;
+        background-color: #060913 !important;
+        margin: 0 !important;
+    }
+
+    .fi-simple-main > form,
+    .fi-simple-main section {
+        width: 100% !important;
+        max-width: 440px !important;
+        margin: auto !important;
+    }
+}
+
+/* EN CELULARES (< 1023px): SE CONVIERTE EN APP MÓVIL */
+@media (max-width: 1023px) {
+    .livo-left-banner-container {
+        display: none !important;
+    }
+    .fi-simple-main {
+        position: relative !important;
+        width: 100% !important;
+        max-width: 440px !important;
+        margin: auto !important;
+        padding: 1.5rem !important;
+    }
+}
+
+/* TARJETA DE CRISTAL (GLASSMORPHISM) */
+.fi-simple-main > form,
+.fi-simple-main section {
+    background: rgba(12, 22, 38, 0.92) !important;
+    border: 1px solid rgba(14, 165, 233, 0.25) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border-radius: 1.5rem !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8) !important;
+    padding: 2.25rem !important;
+}
+
+/* BOTÓN MORADO VECINO */
+.fi-simple-main button[type="submit"] {
+    background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%) !important;
+    border: 1px solid rgba(168, 85, 247, 0.5) !important;
+    box-shadow: 0 10px 25px -5px rgba(168, 85, 247, 0.6) !important;
+    color: #ffffff !important;
+    font-weight: 800 !important;
+    border-radius: 0.85rem !important;
+}
+
+/* BADGES NEÓN */
+.livo-banner-badge {
+    display: inline-block;
+    padding: 0.35rem 0.85rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #38bdf8;
+    background: rgba(14, 165, 233, 0.15);
+    border: 1px solid rgba(14, 165, 233, 0.3);
+    border-radius: 9999px;
+}
+/* OCULTAR TEXTO DUPLICADO ("LIVO Vecinos / Entre a su cuenta") */
+.fi-simple-header,
+.fi-simple-main header {
+    display: none !important;
+}
+/* OCULTAR TÍTULO ESCRITORIO EN PORTERÍA */
+.fi-header-heading { display: none !important; }
+
+/* Texto del Logo adaptable (Negro en Modo Claro, Blanco en Modo Oscuro) */
+.livo-brand-text {
+    color: #ffffff;
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    transition: color 0.3s ease;
+}
+
+html:not(.dark) .livo-brand-text {
+    color: #0f172a !important;
+}
+
+/* FONDO FLOTANTE CON LUCES AMBIENTALES DIFUMINADAS (MODO CLARO) */
+html:not(.dark) body {
+    background-color: #f1f5f9 !important;
+    background-image: 
+        radial-gradient(circle at 85% 10%, rgba(224, 231, 255, 0.8) 0%, transparent 45%),
+        radial-gradient(circle at 15% 40%, rgba(220, 252, 231, 0.6) 0%, transparent 40%),
+        radial-gradient(circle at 90% 70%, rgba(254, 226, 226, 0.7) 0%, transparent 45%),
+        radial-gradient(circle at 30% 90%, rgba(224, 242, 254, 0.8) 0%, transparent 40%) !important;
+    background-attachment: fixed !important;
+}
+
+html:not(.dark) .fi-main {
+    background: transparent !important;
+}
+
+/* TARJETAS CON EFECTO FLOTANTE ELEGANTE */
+html:not(.dark) .fi-wi-widget,
+html:not(.dark) .fi-wi-stats-overview-card {
+    border-radius: 1.25rem !important;
+    box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.06), 0 4px 10px -2px rgba(0, 0, 0, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.8) !important;
+}
+
+/* CABECERA SUPERIOR UNIFICADA Y CON DEGRADADO SUTIL POR DENTRO (MODO CLARO) */
+html:not(.dark) .fi-topbar,
+html:not(.dark) .fi-sidebar-header,
+html:not(.dark) header.fi-sidebar-header {
+    background: linear-gradient(90deg, #ffffff 0%, #f8fafc 50%, #eff6ff 100%) !important;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.8) !important;
+    border-image: none !important;
+    box-shadow: 0 4px 15px -3px rgba(0, 0, 0, 0.03) !important;
+}
+
+html:not(.dark) .fi-sidebar-header {
+    border-right: 1px solid rgba(226, 232, 240, 0.6) !important;
+}
+/* ETIQUETAS DEL FORMULARIO DE LOGIN NÍPIDAS Y VISIBLES */
+.fi-simple-layout label,
+.fi-form-field-label,
+.fi-simple-page label,
+.fi-fo-field-wrp-label label {
+    color: #e2e8f0 !important;
+    font-weight: 700 !important;
+    font-size: 0.85rem !important;
+}
+
+/* TEXTO DE CHECKBOX RECORDARME */
+.fi-simple-layout span,
+.fi-checkbox-label {
+    color: #cbd5e1 !important;
+}
+
+/* OCULTAR EL BOTÓN HAMBURGUESA EN CELULARES PARA EL PANEL VECINO */
+@media (max-width: 768px) {
+    .fi-sidebar-open-button,
+    button[x-on\:click*="sidebar"] {
+        display: none !important;
+    }
+}
+
+/* CENTRAR LOGO LIVO PERFECTAMENTE ARRIBA EN CELULARES */
+@media (max-width: 768px) {
+    .fi-topbar-start {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        position: absolute !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+    }
+}
