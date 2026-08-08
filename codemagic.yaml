@@ -19,7 +19,7 @@ workflows:
           npm install -g @capacitor/cli @capacitor/assets
           rm -rf ios
           npx cap add ios
-          npx @capacitor/assets generate --ios || true
+          npx @capacitor/assets generate --asset-path resources --ios || true
           npx cap sync ios
       - name: Set Xcode Bundle Identifier to pe.com.livo.app
         script: |

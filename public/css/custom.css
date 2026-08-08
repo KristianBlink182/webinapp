@@ -357,3 +357,22 @@ html, body {
 html:not(.dark), html:not(.dark) body {
     background-color: #f1f5f9 !important;
 }
+
+/* ACTIVAR CLICS EN EL MENÚ DEL USUARIO (AVATAR GV, CAMPANA Y CERRAR SESIÓN) */
+.fi-topbar-end,
+.fi-user-menu,
+.fi-user-menu-trigger,
+.fi-dropdown,
+.fi-dropdown-list {
+    z-index: 999999 !important;
+    pointer-events: auto !important;
+}
+
+/* MARGEN SUPERIOR LIMPIO PARA IPHONE */
+@media (max-width: 768px) {
+    header.fi-topbar,
+    .fi-topbar {
+        padding-top: calc(env(safe-area-inset-top, 44px) + 10px) !important;
+        padding-bottom: 0.5rem !important;
+    }
+}
