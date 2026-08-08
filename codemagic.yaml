@@ -23,6 +23,9 @@ workflows:
       - name: Set Xcode Bundle Identifier to pe.com.livo.app
         script: |
           sed -i '' 's/PRODUCT_BUNDLE_IDENTIFIER = .*/PRODUCT_BUNDLE_IDENTIFIER = pe.com.livo.app;/g' ios/App/App.xcodeproj/project.pbxproj
+      - name: Auto-increment iOS Build Number for Apple
+        script: |
+          cd ios/App && agvtool new-version -all $BUILD_NUMBER || true
       - name: Set up automatic code signing
         script: |
           xcode-project use-profiles
