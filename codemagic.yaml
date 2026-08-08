@@ -20,6 +20,9 @@ workflows:
           rm -rf ios
           npx cap add ios
           npx cap sync ios
+      - name: Set Xcode Bundle Identifier to pe.com.livo.app
+        script: |
+          sed -i '' 's/PRODUCT_BUNDLE_IDENTIFIER = .*/PRODUCT_BUNDLE_IDENTIFIER = pe.com.livo.app;/g' ios/App/App.xcodeproj/project.pbxproj
       - name: Set up automatic code signing
         script: |
           xcode-project use-profiles
