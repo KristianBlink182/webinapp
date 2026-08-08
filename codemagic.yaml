@@ -13,11 +13,12 @@ workflows:
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
     scripts:
-      - name: Install dependencies and CocoaPods
+      - name: Install dependencies and generate iOS project
         script: |
           npm install
           npm install -g @capacitor/cli
-          npx cap add ios || true
+          rm -rf ios
+          npx cap add ios
           npx cap sync ios
           cd ios/App && pod install || true
       - name: Set up automatic code signing
