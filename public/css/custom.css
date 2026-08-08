@@ -332,16 +332,27 @@ html:not(.dark) .fi-sidebar-header {
     color: #cbd5e1 !important;
 }
 
-/* OCULTAR EL BOTÓN HAMBURGUESA EN CELULARES PARA EL PANEL VECINO */
+/* AJUSTE PERFECTO DE ALTURA Y PADDING PARA LA CABECERA EN IPHONE (ISLA DINÁMICA / NOTCH) */
 @media (max-width: 768px) {
+    /* Ocultar la hamburguesa */
     .fi-sidebar-open-button,
     button[x-on\:click*="sidebar"] {
         display: none !important;
     }
-}
 
-/* CENTRAR LOGO LIVO PERFECTAMENTE ARRIBA EN CELULARES */
-@media (max-width: 768px) {
+    /* Estirar la barra superior para cubrir todo el espacio negro del reloj y batería */
+    .fi-topbar,
+    header.fi-topbar,
+    .fi-sidebar-header {
+        height: auto !important;
+        min-height: 5.5rem !important;
+        padding-top: calc(env(safe-area-inset-top, 44px) + 6px) !important;
+        padding-bottom: 0.5rem !important;
+        display: flex !important;
+        align-items: center !important;
+    }
+
+    /* Centrar el logo LIVO */
     .fi-topbar-start {
         display: flex !important;
         align-items: center !important;
@@ -351,24 +362,12 @@ html:not(.dark) .fi-sidebar-header {
         transform: translateX(-50%) !important;
     }
 }
-/* MARGEN DE SEGURIDAD NATIVO PARA IPHONE (ISLA DINÁMICA / NOTCH) */
-.fi-topbar,
-header.fi-topbar,
-.fi-sidebar-header {
-    padding-top: env(safe-area-inset-top, 25px) !important;
-}
 
-/* OCULTAR DEFINITIVAMENTE LA HAMBURGUESA EN LA APP */
-.fi-sidebar-open-button,
-button[x-on\:click*="sidebar"] {
-    display: none !important;
-}
-
-/* EVITAR PARPADEOS NEGROS EN MODO CLARO */
+/* EVITAR PARPADEOS NEGROS EN TRANSICIONES */
 html, body {
-    background-color: #f1f5f9 !important;
+    background-color: #060913 !important;
 }
 
-html.dark, html.dark body {
-    background-color: #060913 !important;
+html:not(.dark), html:not(.dark) body {
+    background-color: #f1f5f9 !important;
 }

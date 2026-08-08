@@ -1,1 +1,0 @@
-<?php echo $__env->make("filament.components.brand-logo", array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\laragon\www\sistema-condominio\storage\framework\views/70bf771ae1e6e391cf73655bda87668d.blade.php ENDPATH**/ ?>

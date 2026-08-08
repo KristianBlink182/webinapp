@@ -1,1 +1,0 @@
-@include("filament.vecino.components.mobile-navbar")
