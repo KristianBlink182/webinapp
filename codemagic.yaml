@@ -16,13 +16,17 @@ workflows:
       - name: Install dependencies
         script: |
           npm install
+          npm install -g @capacitor/cli
+      - name: Add iOS platform on Cloud Mac
+        script: |
+          npx cap add ios || true
           npx cap sync ios
       - name: Set up automatic code signing
         script: |
           xcode-project use-profiles
       - name: Build iOS App
         script: |
-          xcode-project build-ipa --workspace "$XCODE_WORKSPACE" --scheme "$XCODE_SCHEME"
+          xcode-project build-ipa --workspace "ios/App/App.xcworkspace" --scheme "App"
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:
