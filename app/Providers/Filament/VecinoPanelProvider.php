@@ -28,6 +28,7 @@ class VecinoPanelProvider extends PanelProvider
     {
         return $panel
             ->id('vecino')
+            ->spa()
             ->domain(str_contains(request()->getHost(), 'test') ? null : 'vecino.livo.com.pe')
             ->path(str_contains(request()->getHost(), 'test') ? 'vecino' : '')
             ->login()

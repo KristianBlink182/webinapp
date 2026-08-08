@@ -1,13 +1,22 @@
 {
-	"appId": "com.livo.vecino",
+	"appId": "pe.com.livo.app",
 	"appName": "LIVO Vecinos",
 	"webDir": "public",
 	"server": {
 		"url": "https://vecino.livo.com.pe",
 		"cleartext": true
 	},
-	"ios": {
-		"contentInset": "always"
+	"plugins": {
+		"SplashScreen": {
+			"launchShowDuration": 3000,
+			"launchAutoHide": true,
+			"backgroundColor": "#060913",
+			"showSpinner": false,
+			"splashFullScreen": true,
+			"splashImmersive": true
+		}
 	},
-	"packageClassList": []
+	"packageClassList": [
+		"SplashScreenPlugin"
+	]
 }

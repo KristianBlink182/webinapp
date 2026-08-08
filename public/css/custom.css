@@ -351,3 +351,24 @@ html:not(.dark) .fi-sidebar-header {
         transform: translateX(-50%) !important;
     }
 }
+/* MARGEN DE SEGURIDAD NATIVO PARA IPHONE (ISLA DINÁMICA / NOTCH) */
+.fi-topbar,
+header.fi-topbar,
+.fi-sidebar-header {
+    padding-top: env(safe-area-inset-top, 25px) !important;
+}
+
+/* OCULTAR DEFINITIVAMENTE LA HAMBURGUESA EN LA APP */
+.fi-sidebar-open-button,
+button[x-on\:click*="sidebar"] {
+    display: none !important;
+}
+
+/* EVITAR PARPADEOS NEGROS EN MODO CLARO */
+html, body {
+    background-color: #f1f5f9 !important;
+}
+
+html.dark, html.dark body {
+    background-color: #060913 !important;
+}
