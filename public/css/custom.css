@@ -340,26 +340,12 @@ html:not(.dark) .fi-sidebar-header {
         display: none !important;
     }
 
-    /* Estirar la barra superior para cubrir todo el espacio negro del reloj y batería */
-    .fi-topbar,
+  /* Bajar toda la barra superior de manera limpia por debajo de la Isla Dinámica */
     header.fi-topbar,
-    .fi-sidebar-header {
-        height: auto !important;
-        min-height: 5.5rem !important;
-        padding-top: calc(env(safe-area-inset-top, 44px) + 6px) !important;
-        padding-bottom: 0.5rem !important;
-        display: flex !important;
-        align-items: center !important;
-    }
-
-    /* Centrar el logo LIVO */
-    .fi-topbar-start {
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        position: absolute !important;
-        left: 50% !important;
-        transform: translateX(-50%) !important;
+    .fi-topbar {
+        margin-top: calc(env(safe-area-inset-top, 44px) + 8px) !important;
+        position: relative !important;
+        width: 100% !important;
     }
 }
 
