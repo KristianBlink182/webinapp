@@ -14,27 +14,23 @@
          x-transition:leave="transition ease-in duration-500" 
          x-transition:leave-start="opacity-100" 
          x-transition:leave-end="opacity-0" 
-         style="position: fixed; inset: 0; z-index: 99999; background: #060913 url('{{ asset('splash.png') }}') center/cover no-repeat; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: #ffffff;"
-        <div style="background: rgba(6, 9, 19, 0.7); backdrop-filter: blur(8px); position: absolute; inset: 0;"></div>
-        <div style="position: relative; z-index: 10; padding: 2rem;">
-            <img src="{{ asset('favicon.ico') }}" alt="LIVO" style="width: 90px; height: 90px; margin: 0 auto 1.5rem auto; object-fit: contain;">
-            <h1 style="font-size: 2.2rem; font-weight: 900; color: #ffffff; margin: 0; letter-spacing: 0.05em;">LIVO</h1>
-            <p style="font-size: 1rem; color: #38bdf8; font-weight: 700; margin-top: 0.5rem;">Administración Inteligente para Edificios y Condominios</p>
-        </div>
+         style="position: fixed; inset: 0; z-index: 2147483647 !important; background: #060913 url('{{ asset('splash.png') }}') center/cover no-repeat;"
+         x-cloak>
     </div>
 @endif
 
 @if($isLoggedIn && !$isLoginRoute)
     @php
         $tenant = \Filament\Facades\Filament::getTenant();
-        $condoNombre = $tenant?->nombre ?? 'edificio';
+        $condoSlug = $tenant ? rawurlencode($tenant->nombre) : 'edificio';
+        $baseUrl = "/vecino/edificio/{$condoSlug}";
         $currentUrl = request()->url();
 
-        $urlEscritorio = "/vecino/edificio/{$condoNombre}/escritorio";
-        $urlFinanzas = "/vecino/edificio/{$condoNombre}/finanzas-hub";
-        $urlSeguridad = "/vecino/edificio/{$condoNombre}/seguridad-hub";
-        $urlGestion = "/vecino/edificio/{$condoNombre}/gestion-hub";
-        $urlComunidad = "/vecino/edificio/{$condoNombre}/comunidad-hub";
+        $urlEscritorio = "{$baseUrl}/escritorio";
+        $urlFinanzas = "{$baseUrl}/finanzas-hub";
+        $urlSeguridad = "{$baseUrl}/seguridad-hub";
+        $urlGestion = "{$baseUrl}/gestion-hub";
+        $urlComunidad = "{$baseUrl}/comunidad-hub";
     @endphp
 
     <style>

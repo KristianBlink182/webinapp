@@ -332,7 +332,7 @@ html:not(.dark) .fi-sidebar-header {
     color: #cbd5e1 !important;
 }
 
-/* CABECERA SUPERIOR MOVIL LIVO LIMPIA COMO EN SAFARI */
+/* CABECERA SUPERIOR MOVIL LIVO LIMPIA AJUSTADA A SAFE AREA DE IPHONE */
 @media (max-width: 768px) {
   /* Ocultar la hamburguesa en la App */
   .fi-sidebar-open-button,
@@ -340,14 +340,15 @@ html:not(.dark) .fi-sidebar-header {
     display: none !important;
   }
 
-  /* Cabecera superior idéntica a Safari ajustada al Safe Area de iOS */
+  /* Forzar que la barra baje debajo de la hora y de la isla dinámica */
   header.fi-topbar,
   .fi-topbar,
   .fi-topbar-nav {
-    position: relative !important;
+    position: sticky !important;
+    top: 0 !important;
     width: 100% !important;
     background-color: #060913 !important;
-    padding-top: calc(env(safe-area-inset-top, 44px) + 14px) !important;
+    padding-top: calc(env(safe-area-inset-top, 44px) + 16px) !important;
     padding-bottom: 0.75rem !important;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
   }
@@ -355,46 +356,24 @@ html:not(.dark) .fi-sidebar-header {
 
 /* EVITAR PARPADEOS NEGROS EN TRANSICIONES */
 html, body {
-    background-color: #060913 !important;
+  background-color: #060913 !important;
 }
 
 html:not(.dark), html:not(.dark) body {
-    background-color: #f1f5f9 !important;
+  background-color: #f1f5f9 !important;
 }
 
-/* ACTIVAR CLICS EN EL MENÚ DEL USUARIO (AVATAR GV, CAMPANA Y CERRAR SESIÓN) */
+/* ACTIVAR CLICS EN EL MENÚ DEL USUARIO */
 .fi-topbar-end,
 .fi-user-menu,
 .fi-user-menu-trigger,
 .fi-dropdown,
 .fi-dropdown-list {
-    z-index: 999999 !important;
-    pointer-events: auto !important;
+  z-index: 999999 !important;
+  pointer-events: auto !important;
 }
 
 /* SEPARADOR FÍSICO SUPERIOR PARA IPHONE */
 .livo-ios-statusbar-spacer {
-    display: none;
-}
-
-@media (max-width: 768px) {
-    .livo-ios-statusbar-spacer {
-        display: block !important;
-        width: 100% !important;
-        height: calc(env(safe-area-inset-top, 44px) + 12px) !important;
-        background-color: #060913 !important;
-        position: relative;
-        z-index: 9999;
-    }
-
-    html:not(.dark) .livo-ios-statusbar-spacer {
-        background-color: #ffffff !important;
-    }
-
-    .fi-topbar,
-    header.fi-topbar {
-        position: relative !important;
-        width: 100% !important;
-        padding-top: 0.5rem !important;
-    }
+  display: none;
 }
