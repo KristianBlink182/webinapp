@@ -21,8 +21,9 @@ workflows:
           npx cap add ios
           npx @capacitor/assets generate --ios --assetPath resources || true
           npx cap sync ios
-          # Modificar Xcode LaunchScreen a Pantalla Completa (Aspect Fill)
+          # Modificar Xcode LaunchScreen a Pantalla Completa (Aspect Fill) y usar Splash
           sed -i '' 's/contentMode="scaleAspectFit"/contentMode="scaleAspectFill"/g' ios/App/App/Base.lproj/LaunchScreen.storyboard || true
+          sed -i '' 's/image="icon"/image="Splash"/g' ios/App/App/Base.lproj/LaunchScreen.storyboard || true
       - name: Set Xcode Bundle Identifier to pe.com.livo.app
         script: |
           sed -i '' 's/PRODUCT_BUNDLE_IDENTIFIER = .*/PRODUCT_BUNDLE_IDENTIFIER = pe.com.livo.app;/g' ios/App/App.xcodeproj/project.pbxproj
