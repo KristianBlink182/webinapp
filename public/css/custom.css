@@ -332,13 +332,23 @@ html:not(.dark) .fi-sidebar-header {
     color: #cbd5e1 !important;
 }
 
-/* CABECERA SUPERIOR MÓVIL LIVO BAJADA E INTEGRADA CON LA ISLA DINÁMICA DE IPHONE */
+/* CABECERA SUPERIOR MÓVIL LIVO LIMPIA COMO EN SAFARI */
 @media (max-width: 768px) {
-    /* 1. Ocultar la hamburguesa */
+    /* Ocultar la hamburguesa en la App */
     .fi-sidebar-open-button,
     button[x-on\:click*="sidebar"] {
         display: none !important;
     }
+
+    /* Cabecera superior idéntica a Safari */
+    header.fi-topbar,
+    .fi-topbar {
+        position: relative !important;
+        width: 100% !important;
+        padding-top: 0.5rem !important;
+        padding-bottom: 0.5rem !important;
+    }
+
 
     /* 2. Unificar la barra con el espacio negro y bajar los elementos al centro */
     header.fi-topbar,
@@ -376,3 +386,29 @@ html:not(.dark), html:not(.dark) body {
     pointer-events: auto !important;
 }
 
+/* SEPARADOR FÍSICO SUPERIOR PARA IPHONE */
+.livo-ios-statusbar-spacer {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .livo-ios-statusbar-spacer {
+        display: block !important;
+        width: 100% !important;
+        height: calc(env(safe-area-inset-top, 44px) + 12px) !important;
+        background-color: #060913 !important;
+        position: relative;
+        z-index: 9999;
+    }
+
+    html:not(.dark) .livo-ios-statusbar-spacer {
+        background-color: #ffffff !important;
+    }
+
+    .fi-topbar,
+    header.fi-topbar {
+        position: relative !important;
+        width: 100% !important;
+        padding-top: 0.5rem !important;
+    }
+}
