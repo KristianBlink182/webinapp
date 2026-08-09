@@ -189,23 +189,24 @@ class PagoResource extends Resource
             ->defaultSort('created_at', 'desc')
             ->actions([
                 Tables\Actions\Action::make('aprobarPago')
-                    ->label('Aprobar Pago')
-                    ->icon('heroicon-m-check-circle')
-                    ->color('success')
-                    ->button()
-                    ->visible(fn (Pago $record) => strtolower($record->estado ?? '') === 'pendiente')
-                    ->action(function (Pago $record) {
-                        $record->update([
-                            'estado'     => 'Pagado',
-                            'fecha_pago' => now('America/Lima'),
-                        ]);
+    ->label(fn (Pago $record) => !empty($record->voucher) ? 'Aprobar Pago' : 'Esperando Pago')
+    ->icon(fn (Pago $record) => !empty($record->voucher) ? 'heroicon-m-check-circle' : 'heroicon-m-clock')
+    ->color(fn (Pago $record) => !empty($record->voucher) ? 'success' : 'gray')
+    ->button()
+    ->disabled(fn (Pago $record) => empty($record->voucher))
+    ->visible(fn (Pago $record) => strtolower($record->estado ?? '') !== 'pagado')
+    ->action(function (Pago $record) {
+        $record->update([
+            'estado' => 'Pagado',
+            'fecha_pago' => now('America/Lima'),
+        ]);
 
-                        Notification::make()
-                            ->title('Pago Aprobado')
-                            ->body("Se ha verificado el pago del Dpto. {$record->departamento?->numero}.")
-                            ->success()
-                            ->send();
-                    }),
+        Notification::make()
+            ->title('Pago Aprobado')
+            ->body("Se ha verificado el pago del Dpto. {$record->departamento?->numero}.")
+            ->success()
+            ->send();
+    }),
 
                 Tables\Actions\EditAction::make(),
             ]);

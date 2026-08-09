@@ -94,10 +94,7 @@ class VecinoPanelProvider extends PanelProvider
     PanelsRenderHook::HEAD_END,
     fn (): string => Blade::render('<link rel="stylesheet" href="' . asset('css/custom.css') . '?v=' . time() . '">'),
 )
-->renderHook(
-    PanelsRenderHook::TOPBAR_START,
-    fn (): string => Blade::render('@include("filament.components.brand-logo")'),
-)
+
 ->renderHook(
     PanelsRenderHook::BODY_END,
     fn (): string => view()->exists('filament.vecino.components.mobile-navbar')

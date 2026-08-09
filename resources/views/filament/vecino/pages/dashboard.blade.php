@@ -299,7 +299,7 @@ $condoSlug = rawurlencode($condoNombre);
             $totalPaquetes = is_countable($paquetesPendientes) ? count($paquetesPendientes) : (int)$paquetesPendientes;
 
             // RUTAS NATIVAS OFICIALES DE FILAMENT
-            $urlEscritorio = "/vecino/edificio/{$condoSlug}/escritorio";
+            $urlEscritorio = "/edificio/{$condoSlug}/escritorio";
             $urlPagos = \App\Filament\Vecino\Resources\PagoResource::getUrl('index');
             $urlInvitados = \App\Filament\Vecino\Resources\VisitaResource::getUrl('index');
             $urlReservas = \App\Filament\Vecino\Resources\ReservaResource::getUrl('index');

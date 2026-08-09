@@ -169,7 +169,7 @@
                         <p class="livo-text-main" style="font-size: 0.85rem; margin: 0;"><strong>Titular:</strong> {{ $saasConfig['yape_titular'] ?? 'LIVO SaaS Oficial' }}</p>
                     </div>
                     <div style="padding: 0.5rem; background: #ffffff; border-radius: 0.85rem; border: 1px solid #cbd5e1;">
-                        <img src="{{ asset('images/logo.png') }}" alt="QR Yape" style="width: 80px; height: 80px; object-fit: contain;">
+                        <img src="{{ asset('images/logo-yape.png') }}" alt="QR Yape" style="width: 80px; height: 80px; object-fit: contain;">
                     </div>
                 </div>
             </div>

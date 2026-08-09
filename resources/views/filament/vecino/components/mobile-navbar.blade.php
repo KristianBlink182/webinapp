@@ -3,42 +3,42 @@
     $isLoginRoute = request()->routeIs('*.login') || str_contains(request()->url(), '/login');
 @endphp
 
-{{-- 1. SEPARADOR FÍSICO SUPERIOR --}}
+{{-- 1. SEPARADOR FÍSICO SUPERIOR PARA IPHONE --}}
 <div class="livo-ios-statusbar-spacer"></div>
 
-{{-- 2. PORTADA DE CARGA SPLASH SCREEN DE 5 SEGUNDOS (DE FRENTE Y SOLO 1 VEZ POR SESIÓN) --}}
-@if($isLoggedIn && !$isLoginRoute)
-    <div x-data="{ 
-             showSplash: !sessionStorage.getItem('livo_splash_shown') 
-         }" 
-         x-init="
-             if (showSplash) {
-                 setTimeout(() => { 
-                     showSplash = false; 
-                     sessionStorage.setItem('livo_splash_shown', 'true'); 
-                 }, 5000);
-             }
-         " 
-         x-show="showSplash" 
-         x-transition:leave="transition ease-in duration-500" 
-         x-transition:leave-start="opacity-100" 
-         x-transition:leave-end="opacity-0" 
-         style="position: fixed; inset: 0; z-index: 2147483647 !important; background: #060913 url('{{ asset('splash.png') }}') center/cover no-repeat;"
-         x-cloak>
-    </div>
-@endif
+{{-- 2. PORTADA DE CARGA SPLASH SCREEN DE 5 SEGUNDOS (SOLO EN MÓVILES) --}}
+<div class="livo-splash-overlay"
+     x-data="{ 
+         showSplash: !sessionStorage.getItem('livo_splash_shown') 
+     }" 
+     x-init="
+         if (showSplash) {
+             setTimeout(() => { 
+                 showSplash = false; 
+                 sessionStorage.setItem('livo_splash_shown', 'true'); 
+             }, 5000);
+         }
+     " 
+     x-show="showSplash" 
+     x-transition:leave="transition ease-in duration-500" 
+     x-transition:leave-start="opacity-100" 
+     x-transition:leave-end="opacity-0" 
+     style="position: fixed; inset: 0; z-index: 2147483647 !important; background: #060913 url('{{ asset('splash.png') }}') center/cover no-repeat;"
+     x-cloak>
+</div>
 
+{{-- 3. BARRA INFERIOR DE NAVEGACIÓN (SOLO CUANDO EL VECINO INICIA SESIÓN) --}}
 @if($isLoggedIn && !$isLoginRoute)
     @php
         $tenant = \Filament\Facades\Filament::getTenant();
-        $condoNombre = $tenant ? rawurlencode($tenant->nombre) : 'edificio';
+        $condoSlug = $tenant ? rawurlencode($tenant->nombre) : 'edificio';
         $currentUrl = request()->url();
 
-        try { $urlEscritorio = \App\Filament\Vecino\Pages\Escritorio::getUrl(); } catch (\Throwable $e) { $urlEscritorio = "/vecino/edificio/{$condoNombre}/escritorio"; }
-        try { $urlFinanzas = \App\Filament\Vecino\Pages\FinanzasHub::getUrl(); } catch (\Throwable $e) { $urlFinanzas = "/vecino/edificio/{$condoNombre}/finanzas-hub"; }
-        try { $urlSeguridad = \App\Filament\Vecino\Pages\SeguridadHub::getUrl(); } catch (\Throwable $e) { $urlSeguridad = "/vecino/edificio/{$condoNombre}/seguridad-hub"; }
-        try { $urlGestion = \App\Filament\Vecino\Pages\GestionHub::getUrl(); } catch (\Throwable $e) { $urlGestion = "/vecino/edificio/{$condoNombre}/gestion-hub"; }
-        try { $urlComunidad = \App\Filament\Vecino\Pages\ComunidadHub::getUrl(); } catch (\Throwable $e) { $urlComunidad = "/vecino/edificio/{$condoNombre}/comunidad-hub"; }
+        try { $urlEscritorio = \App\Filament\Vecino\Pages\Escritorio::getUrl(); } catch (\Throwable $e) { $urlEscritorio = "/edificio/{$condoSlug}/escritorio"; }
+        try { $urlFinanzas = \App\Filament\Vecino\Pages\FinanzasHub::getUrl(); } catch (\Throwable $e) { $urlFinanzas = "/edificio/{$condoSlug}/finanzas-hub"; }
+        try { $urlSeguridad = \App\Filament\Vecino\Pages\SeguridadHub::getUrl(); } catch (\Throwable $e) { $urlSeguridad = "/edificio/{$condoSlug}/seguridad-hub"; }
+        try { $urlGestion = \App\Filament\Vecino\Pages\GestionHub::getUrl(); } catch (\Throwable $e) { $urlGestion = "/edificio/{$condoSlug}/gestion-hub"; }
+        try { $urlComunidad = \App\Filament\Vecino\Pages\ComunidadHub::getUrl(); } catch (\Throwable $e) { $urlComunidad = "/edificio/{$condoSlug}/comunidad-hub"; }
     @endphp
 
     <style>
@@ -87,8 +87,11 @@
             transform: translateY(-2px);
         }
 
-        @media (min-width: 768px) {
-            .livo-mobile-navbar { display: none !important; }
+        @media (min-width: 769px) {
+            .livo-mobile-navbar,
+            .livo-splash-overlay {
+                display: none !important;
+            }
         }
     </style>
 

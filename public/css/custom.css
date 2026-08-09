@@ -332,9 +332,9 @@ html:not(.dark) .fi-sidebar-header {
     color: #cbd5e1 !important;
 }
 
-/* CABECERA Y NAVEGACION MOVIL LIVO CON ESPACIO BALANCEADO */
+/* CABECERA Y NAVEGACION MOVIL LIVO OPTIMIZADA PARA APP Y SAFARI */
 @media (max-width: 768px) {
-  /* Ocultar menú hamburguesa en móviles */
+  /* Ocultar totalmente la hamburguesa y la barra lateral en móviles */
   .fi-sidebar-open-button,
   .fi-sidebar-close-button,
   button[x-on\:click*="sidebar"],
@@ -342,7 +342,26 @@ html:not(.dark) .fi-sidebar-header {
     display: none !important;
   }
 
-  /* Barra superior ajustada con espacio equilibrado */
+  /* Centrar verticalmente la tarjeta de Login y eliminar scroll lateral */
+  .fi-simple-layout,
+  main.fi-simple-main {
+    min-height: 100vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+    padding-top: calc(env(safe-area-inset-top, 44px) + 12px) !important;
+    padding-bottom: 2rem !important;
+  }
+
+  /* Ocultar barra de desplazamiento gris en el navegador móvil */
+  ::-webkit-scrollbar {
+    width: 0px !important;
+    height: 0px !important;
+    background: transparent !important;
+  }
+
+  /* Barra superior ajustada con Safe Area para iPhone */
   header.fi-topbar,
   .fi-topbar,
   .fi-topbar-nav {
@@ -350,12 +369,12 @@ html:not(.dark) .fi-sidebar-header {
     top: 0 !important;
     width: 100% !important;
     background-color: #060913 !important;
-    padding-top: calc(env(safe-area-inset-top, 44px) + 8px) !important;
+    padding-top: calc(env(safe-area-inset-top, 44px) + 12px) !important;
     padding-bottom: 0.65rem !important;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
   }
 
-  /* Reducir espacio superior para subir la bienvenida justo a la mitad */
+  /* Subir el contenido principal a la mitad del espacio negro */
   .fi-main, main {
     padding-top: 0.25rem !important;
     padding-bottom: 5.5rem !important;

@@ -8,7 +8,8 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
+use Filament\Notifications\Notification;
+use App\Filament\Vecino\Resources\PagoResource\Pages;
 
 class PagoResource extends Resource
 {
@@ -22,25 +23,7 @@ class PagoResource extends Resource
     protected static ?string $pluralModelLabel = 'Mis Pagos y Recibos';
     protected static ?int $navigationSort = 1;
 
-    // 🔴 INSIGNIA NEÓN EN EL MENÚ LATERAL SI TIENE RECIBOS PENDIENTES DE PAGO
-    public static function getNavigationBadge(): ?string
-    {
-        $depaId = auth()->user()->departamento_id;
-        if (!$depaId) return null;
-
-        $pendientes = Pago::where('departamento_id', $depaId)
-            ->whereIn('estado', ['Pendiente', 'pendiente', 'Pendiente de Pago'])
-            ->count();
-
-        return $pendientes > 0 ? (string) $pendientes : null;
-    }
-
-    public static function getNavigationBadgeColor(): ?string
-    {
-        return 'danger';
-    }
-
-    public static function getEloquentQuery(): Builder
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
         return parent::getEloquentQuery()
             ->where('departamento_id', auth()->user()->departamento_id);
@@ -50,10 +33,8 @@ class PagoResource extends Resource
     {
         return $table
             ->columns([
-              // 🎯 CONCEPTO GARANTIZADO (MES Y AÑO SI VIENE EN BLANCO)
                 Tables\Columns\TextColumn::make('concepto')
-                    ->label('Concepto')
-                    ->searchable()
+                    ->label('CONCEPTO')
                     ->weight('bold')
                     ->state(function ($record) {
                         if (!empty($record->concepto)) {
@@ -65,44 +46,72 @@ class PagoResource extends Resource
                     }),
 
                 Tables\Columns\TextColumn::make('monto')
-                    ->label('Monto Total')
+                    ->label('MONTO TOTAL')
                     ->money('PEN')
-                    ->weight('black')
+                    ->weight('bold')
                     ->color('primary'),
 
                 Tables\Columns\TextColumn::make('fecha_vencimiento')
-                    ->label('Fecha Vencimiento')
-                    ->date('d/m/Y')
-                    ->icon('heroicon-m-clock')
-                    ->placeholder('12 de cada mes'),
+                    ->label('FECHA VENCIMIENTO')
+                    ->default('12 de cada mes'),
 
                 Tables\Columns\TextColumn::make('estado')
-                    ->label('Estado')
+                    ->label('ESTADO')
                     ->badge()
                     ->color(fn (string $state = null): string => match (strtolower($state ?? '')) {
-                        'pendiente', 'pendiente de pago' => 'danger',
-                        'en revisión', 'procesando', 'en revision' => 'warning',
-                        'aprobado', 'pagado' => 'success',
+                        'pagado', 'aprobado' => 'success',
+                        'en revisión', 'en revision', 'procesando' => 'warning',
+                        'pendiente' => 'danger',
                         default => 'gray',
+                    })
+                    ->formatStateUsing(fn ($state) => match (strtolower($state ?? '')) {
+                        'pagado', 'aprobado' => 'Pagado',
+                        'en revisión', 'en revision', 'procesando' => 'Validando Pago',
+                        default => 'Pendiente',
                     }),
             ])
             ->defaultSort('created_at', 'desc')
             ->actions([
-                // BOTÓN 1: VER RECIBO DETALLADO EN PDF
-                Tables\Actions\Action::make('verPDF')
-                    ->label('Ver Recibo PDF')
+                Tables\Actions\Action::make('verPdf')
+                    ->label('📄 Ver Recibo PDF')
                     ->icon('heroicon-m-document-text')
                     ->color('info')
                     ->button()
                     ->url(fn (Pago $record): string => route('pago.pdf', $record))
                     ->openUrlInNewTab(),
 
-                // BOTÓN 2: SUBIR VOUCHER DE PAGO
-                Tables\Actions\EditAction::make()
-                    ->label('Subir Voucher')
-                    ->icon('heroicon-m-arrow-up-tray')
-                    ->color('success')
-                    ->button(),
+               Tables\Actions\EditAction::make()
+    ->label(fn (Pago $record) => match (strtolower($record->estado ?? '')) {
+        'pagado', 'aprobado' => '🟢 Pagado',
+        'en revisión', 'en revision', 'procesando' => '🟡 Validando Pago',
+        default => '💳 Pagar Recibo',
+    })
+    ->icon(fn (Pago $record) => match (strtolower($record->estado ?? '')) {
+        'pagado', 'aprobado' => 'heroicon-m-check-badge',
+        'en revisión', 'en revision', 'procesando' => 'heroicon-m-clock',
+        default => 'heroicon-m-credit-card',
+    })
+    ->color(fn (Pago $record) => match (strtolower($record->estado ?? '')) {
+        'pagado', 'aprobado' => 'success',
+        'en revisión', 'en revision', 'procesando' => 'warning',
+        default => 'success',
+    })
+    ->modalHeading('Reportar Comprobante de Pago')
+    ->modalSubmitActionLabel('🚀 Enviar Pago')
+    ->disabled(fn (Pago $record) => in_array(strtolower($record->estado ?? ''), ['pagado', 'aprobado', 'en revisión', 'en revision', 'procesando']))
+    ->using(function (Pago $record, array $data): Pago {
+        $data['estado'] = 'En Revisión';
+        $record->update($data);
+        return $record;
+    })
+    ->after(function () {
+        Notification::make()
+            ->title('Comprobante Enviado')
+            ->body('Tu pago ha sido reportado con éxito. La administración validará el comprobante.')
+            ->success()
+            ->send();
+    })
+    ->button(),
             ]);
     }
 
@@ -114,13 +123,24 @@ class PagoResource extends Resource
                     ->description('Adjunta la foto o captura de tu Yape, Plin o transferencia bancaria.')
                     ->schema([
                         Forms\Components\TextInput::make('concepto')
-                            ->label('Concepto')
-                            ->disabled(),
+    ->label('Concepto')
+    ->formatStateUsing(function ($state, Pago $record) {
+        if (!empty($state)) {
+            return $state;
+        }
+        $mes = $record->mes ?? 'Febrero';
+        $anio = $record->anio ?? date('Y');
+        return "Cuota de Mantenimiento - {$mes} {$anio}";
+    })
+    ->disabled()
+    ->dehydrated(),
 
                         Forms\Components\TextInput::make('monto')
                             ->label('Monto (S/)')
                             ->prefix('S/')
-                            ->disabled(),
+                            ->formatStateUsing(fn ($state) => number_format((float)$state, 2, '.', ''))
+                            ->disabled()
+                            ->dehydrated(),
 
                         Forms\Components\FileUpload::make('voucher')
                             ->label('Imagen del Comprobante / Voucher')
@@ -135,7 +155,7 @@ class PagoResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => PagoResource\Pages\ListPagos::route('/'),
+            'index' => Pages\ListPagos::route('/'),
         ];
     }
 }
