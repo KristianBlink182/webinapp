@@ -368,11 +368,12 @@ html:not(.dark), html:not(.dark) body {
     pointer-events: auto !important;
 }
 
-/* MARGEN SUPERIOR LIMPIO PARA IPHONE */
+/* MARGEN SUPERIOR HOLGADO PARA EVITAR SOLAPAMIENTO CON LA ISLA DINÁMICA DE IPHONE */
 @media (max-width: 768px) {
+    .fi-topbar,
     header.fi-topbar,
-    .fi-topbar {
-        padding-top: calc(env(safe-area-inset-top, 44px) + 10px) !important;
-        padding-bottom: 0.5rem !important;
+    .fi-sidebar-header {
+        padding-top: calc(env(safe-area-inset-top, 44px) + 28px) !important;
+        padding-bottom: 0.75rem !important;
     }
 }
