@@ -332,20 +332,28 @@ html:not(.dark) .fi-sidebar-header {
     color: #cbd5e1 !important;
 }
 
-/* AJUSTE PERFECTO DE ALTURA Y PADDING PARA LA CABECERA EN IPHONE (ISLA DINÁMICA / NOTCH) */
+/* CABECERA SUPERIOR MÓVIL LIVO BAJADA E INTEGRADA CON LA ISLA DINÁMICA DE IPHONE */
 @media (max-width: 768px) {
-    /* Ocultar la hamburguesa */
+    /* 1. Ocultar la hamburguesa */
     .fi-sidebar-open-button,
     button[x-on\:click*="sidebar"] {
         display: none !important;
     }
 
-  /* Bajar toda la barra superior de manera limpia por debajo de la Isla Dinámica */
+    /* 2. Unificar la barra con el espacio negro y bajar los elementos al centro */
     header.fi-topbar,
     .fi-topbar {
-        margin-top: calc(env(safe-area-inset-top, 44px) + 8px) !important;
-        position: relative !important;
-        width: 100% !important;
+        background-color: #060913 !important;
+        padding-top: calc(env(safe-area-inset-top, 44px) + 38px) !important;
+        padding-bottom: 1rem !important;
+        min-height: 6.5rem !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    }
+
+    html:not(.dark) header.fi-topbar,
+    html:not(.dark) .fi-topbar {
+        background-color: #ffffff !important;
+        border-bottom: 1px solid rgba(226, 232, 240, 0.8) !important;
     }
 }
 
@@ -368,12 +376,3 @@ html:not(.dark), html:not(.dark) body {
     pointer-events: auto !important;
 }
 
-/* MARGEN SUPERIOR HOLGADO PARA EVITAR SOLAPAMIENTO CON LA ISLA DINÁMICA DE IPHONE */
-@media (max-width: 768px) {
-    .fi-topbar,
-    header.fi-topbar,
-    .fi-sidebar-header {
-        padding-top: calc(env(safe-area-inset-top, 44px) + 28px) !important;
-        padding-bottom: 0.75rem !important;
-    }
-}
