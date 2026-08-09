@@ -291,7 +291,7 @@
             $dpto = $authUser?->departamento;
             $numeroDpto = $dpto?->numero ?? 'N/A';
             $condoNombre = $condominio?->nombre ?? $dpto?->condominio?->nombre ?? 'Sin Condominio';
-
+$condoSlug = rawurlencode($condoNombre);
             $alertaActiva = \App\Models\AlertaSOS::where('departamento_id', $authUser->departamento_id)
                 ->where('estado', 'Pendiente')
                 ->first();
@@ -299,7 +299,7 @@
             $totalPaquetes = is_countable($paquetesPendientes) ? count($paquetesPendientes) : (int)$paquetesPendientes;
 
             // RUTAS NATIVAS OFICIALES DE FILAMENT
-            $urlEscritorio = "/vecino/edificio/{$condoNombre}/escritorio";
+            $urlEscritorio = "/vecino/edificio/{$condoSlug}/escritorio";
             $urlPagos = \App\Filament\Vecino\Resources\PagoResource::getUrl('index');
             $urlInvitados = \App\Filament\Vecino\Resources\VisitaResource::getUrl('index');
             $urlReservas = \App\Filament\Vecino\Resources\ReservaResource::getUrl('index');

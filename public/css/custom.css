@@ -332,15 +332,17 @@ html:not(.dark) .fi-sidebar-header {
     color: #cbd5e1 !important;
 }
 
-/* CABECERA SUPERIOR MOVIL LIVO CON SAFE AREA HOLGADA PARA IPHONE */
+/* CABECERA Y NAVEGACION MOVIL LIVO CON ESPACIO BALANCEADO */
 @media (max-width: 768px) {
-  /* Ocultar la hamburguesa en la App */
+  /* Ocultar menú hamburguesa en móviles */
   .fi-sidebar-open-button,
-  button[x-on\:click*="sidebar"] {
+  .fi-sidebar-close-button,
+  button[x-on\:click*="sidebar"],
+  aside.fi-sidebar {
     display: none !important;
   }
 
-  /* Bajar la barra holgadamente aprovechando el espacio superior */
+  /* Barra superior ajustada con espacio equilibrado */
   header.fi-topbar,
   .fi-topbar,
   .fi-topbar-nav {
@@ -348,14 +350,20 @@ html:not(.dark) .fi-sidebar-header {
     top: 0 !important;
     width: 100% !important;
     background-color: #060913 !important;
-    padding-top: max(calc(env(safe-area-inset-top, 44px) + 32px), 68px) !important;
-    padding-bottom: 0.85rem !important;
+    padding-top: calc(env(safe-area-inset-top, 44px) + 8px) !important;
+    padding-bottom: 0.65rem !important;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  }
+
+  /* Reducir espacio superior para subir la bienvenida justo a la mitad */
+  .fi-main, main {
+    padding-top: 0.25rem !important;
+    padding-bottom: 5.5rem !important;
   }
 }
 
-/* EVITAR PARPADEOS NEGROS EN TRANSICIONES */
-html, body {
+/* EVITAR PARPADEOS NEGROS EN NAVEGACIÓN SPA LIVEWIRE */
+html, body, .fi-body, .fi-main, main {
   background-color: #060913 !important;
 }
 
@@ -373,7 +381,6 @@ html:not(.dark), html:not(.dark) body {
   pointer-events: auto !important;
 }
 
-/* SEPARADOR FÍSICO SUPERIOR PARA IPHONE */
 .livo-ios-statusbar-spacer {
   display: none;
 }

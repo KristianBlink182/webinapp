@@ -3,10 +3,10 @@
     $isLoginRoute = request()->routeIs('*.login') || str_contains(request()->url(), '/login');
 @endphp
 
-{{-- 1. SEPARADOR FÍSICO SUPERIOR PARA LA ISLA DINÁMICA DE IPHONE --}}
+{{-- 1. SEPARADOR FÍSICO SUPERIOR --}}
 <div class="livo-ios-statusbar-spacer"></div>
 
-{{-- 2. PORTADA DE CARGA SPLASH SCREEN DE 3.5 SEGUNDOS (SOLO 1 VEZ POR SESIÓN) --}}
+{{-- 2. PORTADA DE CARGA SPLASH SCREEN DE 5 SEGUNDOS (DE FRENTE Y SOLO 1 VEZ POR SESIÓN) --}}
 @if($isLoggedIn && !$isLoginRoute)
     <div x-data="{ 
              showSplash: !sessionStorage.getItem('livo_splash_shown') 
@@ -16,7 +16,7 @@
                  setTimeout(() => { 
                      showSplash = false; 
                      sessionStorage.setItem('livo_splash_shown', 'true'); 
-                 }, 3500);
+                 }, 5000);
              }
          " 
          x-show="showSplash" 
@@ -31,7 +31,7 @@
 @if($isLoggedIn && !$isLoginRoute)
     @php
         $tenant = \Filament\Facades\Filament::getTenant();
-        $condoNombre = $tenant?->nombre ?? 'edificio';
+        $condoNombre = $tenant ? rawurlencode($tenant->nombre) : 'edificio';
         $currentUrl = request()->url();
 
         try { $urlEscritorio = \App\Filament\Vecino\Pages\Escritorio::getUrl(); } catch (\Throwable $e) { $urlEscritorio = "/vecino/edificio/{$condoNombre}/escritorio"; }
