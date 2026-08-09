@@ -3,7 +3,10 @@
     $isLoginRoute = request()->routeIs('*.login') || str_contains(request()->url(), '/login');
 @endphp
 
-{{-- 1. PORTADA MÓVIL SPLASH SCREEN DE 3 SEGUNDOS (MUESTRA ÚNICAMENTE TU FOTO SPLASH.PNG A PANTALLA COMPLETA) --}}
+{{-- 1. SEPARADOR FÍSICO SUPERIOR PARA LA ISLA DINÁMICA DE IPHONE --}}
+<div class="livo-ios-statusbar-spacer"></div>
+
+{{-- 2. PORTADA DE CARGA SPLASH SCREEN DE 3 SEGUNDOS (FOTO COMPLETA EDIFICIOS) --}}
 @if($isLoggedIn && !$isLoginRoute)
     <div x-data="{ showSplash: true }" 
          x-init="setTimeout(() => showSplash = false, 3000)" 
@@ -11,8 +14,14 @@
          x-transition:leave="transition ease-in duration-500" 
          x-transition:leave-start="opacity-100" 
          x-transition:leave-end="opacity-0" 
-         style="position: fixed; inset: 0; z-index: 999999; background: #060913 url('{{ asset('resources/splash.png') }}') center/cover no-repeat;"
+         style="position: fixed; inset: 0; z-index: 999999; background: #060913 url('{{ asset('resources/splash.png') }}') center/cover no-repeat; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: #ffffff;"
          x-cloak>
+        <div style="background: rgba(6, 9, 19, 0.7); backdrop-filter: blur(8px); position: absolute; inset: 0;"></div>
+        <div style="position: relative; z-index: 10; padding: 2rem;">
+            <img src="{{ asset('favicon.ico') }}" alt="LIVO" style="width: 90px; height: 90px; margin: 0 auto 1.5rem auto; object-fit: contain;">
+            <h1 style="font-size: 2.2rem; font-weight: 900; color: #ffffff; margin: 0; letter-spacing: 0.05em;">LIVO</h1>
+            <p style="font-size: 1rem; color: #38bdf8; font-weight: 700; margin-top: 0.5rem;">Administración Inteligente para Edificios y Condominios</p>
+        </div>
     </div>
 @endif
 
