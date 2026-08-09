@@ -6,10 +6,19 @@
 {{-- 1. SEPARADOR FÍSICO SUPERIOR PARA LA ISLA DINÁMICA DE IPHONE --}}
 <div class="livo-ios-statusbar-spacer"></div>
 
-{{-- 2. PORTADA DE CARGA SPLASH SCREEN DE 3 SEGUNDOS (FOTO COMPLETA EDIFICIOS) --}}
+{{-- 2. PORTADA DE CARGA SPLASH SCREEN DE 3.5 SEGUNDOS (SOLO 1 VEZ POR SESIÓN) --}}
 @if($isLoggedIn && !$isLoginRoute)
-    <div x-data="{ showSplash: true }" 
-         x-init="setTimeout(() => showSplash = false, 3000)" 
+    <div x-data="{ 
+             showSplash: !sessionStorage.getItem('livo_splash_shown') 
+         }" 
+         x-init="
+             if (showSplash) {
+                 setTimeout(() => { 
+                     showSplash = false; 
+                     sessionStorage.setItem('livo_splash_shown', 'true'); 
+                 }, 3500);
+             }
+         " 
          x-show="showSplash" 
          x-transition:leave="transition ease-in duration-500" 
          x-transition:leave-start="opacity-100" 
@@ -22,15 +31,14 @@
 @if($isLoggedIn && !$isLoginRoute)
     @php
         $tenant = \Filament\Facades\Filament::getTenant();
-        $condoSlug = $tenant ? rawurlencode($tenant->nombre) : 'edificio';
-        $baseUrl = "/vecino/edificio/{$condoSlug}";
+        $condoNombre = $tenant?->nombre ?? 'edificio';
         $currentUrl = request()->url();
 
-        $urlEscritorio = "{$baseUrl}/escritorio";
-        $urlFinanzas = "{$baseUrl}/finanzas-hub";
-        $urlSeguridad = "{$baseUrl}/seguridad-hub";
-        $urlGestion = "{$baseUrl}/gestion-hub";
-        $urlComunidad = "{$baseUrl}/comunidad-hub";
+        try { $urlEscritorio = \App\Filament\Vecino\Pages\Escritorio::getUrl(); } catch (\Throwable $e) { $urlEscritorio = "/vecino/edificio/{$condoNombre}/escritorio"; }
+        try { $urlFinanzas = \App\Filament\Vecino\Pages\FinanzasHub::getUrl(); } catch (\Throwable $e) { $urlFinanzas = "/vecino/edificio/{$condoNombre}/finanzas-hub"; }
+        try { $urlSeguridad = \App\Filament\Vecino\Pages\SeguridadHub::getUrl(); } catch (\Throwable $e) { $urlSeguridad = "/vecino/edificio/{$condoNombre}/seguridad-hub"; }
+        try { $urlGestion = \App\Filament\Vecino\Pages\GestionHub::getUrl(); } catch (\Throwable $e) { $urlGestion = "/vecino/edificio/{$condoNombre}/gestion-hub"; }
+        try { $urlComunidad = \App\Filament\Vecino\Pages\ComunidadHub::getUrl(); } catch (\Throwable $e) { $urlComunidad = "/vecino/edificio/{$condoNombre}/comunidad-hub"; }
     @endphp
 
     <style>
@@ -44,7 +52,7 @@
             -webkit-backdrop-filter: blur(20px);
             border-top: 1px solid rgba(255, 255, 255, 0.1);
             z-index: 99999 !important;
-            padding: 0.65rem 0.5rem 1.25rem 0.5rem;
+            padding: 0.75rem 0.5rem 1.25rem 0.5rem;
             display: flex;
             justify-content: space-around;
             align-items: center;
@@ -75,7 +83,8 @@
 
         .livo-nav-item.active,
         .livo-nav-item:hover {
-            color: #0284c7 !important;
+            color: #38bdf8 !important;
+            transform: translateY(-2px);
         }
 
         @media (min-width: 768px) {
@@ -84,28 +93,28 @@
     </style>
 
     <div class="livo-mobile-navbar">
-        <a href="{{ $urlEscritorio }}" class="livo-nav-item {{ str_contains($currentUrl, 'escritorio') ? 'active' : '' }}">
-            <span style="font-size: 1.25rem;">🏠</span>
+        <a href="{{ $urlEscritorio }}" wire:navigate class="livo-nav-item {{ str_contains($currentUrl, 'escritorio') ? 'active' : '' }}">
+            <span style="font-size: 1.3rem;">🏠</span>
             <span>Escritorio</span>
         </a>
 
-        <a href="{{ $urlFinanzas }}" class="livo-nav-item {{ str_contains($currentUrl, 'finanzas') ? 'active' : '' }}">
-            <span style="font-size: 1.25rem;">💰</span>
+        <a href="{{ $urlFinanzas }}" wire:navigate class="livo-nav-item {{ str_contains($currentUrl, 'finanzas') ? 'active' : '' }}">
+            <span style="font-size: 1.3rem;">💰</span>
             <span>Finanzas</span>
         </a>
 
-        <a href="{{ $urlSeguridad }}" class="livo-nav-item {{ str_contains($currentUrl, 'seguridad') ? 'active' : '' }}">
-            <span style="font-size: 1.25rem;">🛡️</span>
+        <a href="{{ $urlSeguridad }}" wire:navigate class="livo-nav-item {{ str_contains($currentUrl, 'seguridad') ? 'active' : '' }}">
+            <span style="font-size: 1.3rem;">🛡️</span>
             <span>Seguridad</span>
         </a>
 
-        <a href="{{ $urlGestion }}" class="livo-nav-item {{ str_contains($currentUrl, 'gestion') ? 'active' : '' }}">
-            <span style="font-size: 1.25rem;">⚙️</span>
+        <a href="{{ $urlGestion }}" wire:navigate class="livo-nav-item {{ str_contains($currentUrl, 'gestion') ? 'active' : '' }}">
+            <span style="font-size: 1.3rem;">⚙️</span>
             <span>Gestión</span>
         </a>
 
-        <a href="{{ $urlComunidad }}" class="livo-nav-item {{ str_contains($currentUrl, 'comunidad') ? 'active' : '' }}">
-            <span style="font-size: 1.25rem;">👥</span>
+        <a href="{{ $urlComunidad }}" wire:navigate class="livo-nav-item {{ str_contains($currentUrl, 'comunidad') ? 'active' : '' }}">
+            <span style="font-size: 1.3rem;">👥</span>
             <span>Comunidad</span>
         </a>
     </div>

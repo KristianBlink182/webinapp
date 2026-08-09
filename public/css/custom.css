@@ -332,7 +332,7 @@ html:not(.dark) .fi-sidebar-header {
     color: #cbd5e1 !important;
 }
 
-/* CABECERA SUPERIOR MOVIL LIVO LIMPIA AJUSTADA A SAFE AREA DE IPHONE */
+/* CABECERA SUPERIOR MOVIL LIVO CON SAFE AREA HOLGADA PARA IPHONE */
 @media (max-width: 768px) {
   /* Ocultar la hamburguesa en la App */
   .fi-sidebar-open-button,
@@ -340,7 +340,7 @@ html:not(.dark) .fi-sidebar-header {
     display: none !important;
   }
 
-  /* Forzar que la barra baje debajo de la hora y de la isla dinámica */
+  /* Bajar la barra holgadamente aprovechando el espacio superior */
   header.fi-topbar,
   .fi-topbar,
   .fi-topbar-nav {
@@ -348,8 +348,8 @@ html:not(.dark) .fi-sidebar-header {
     top: 0 !important;
     width: 100% !important;
     background-color: #060913 !important;
-    padding-top: calc(env(safe-area-inset-top, 44px) + 16px) !important;
-    padding-bottom: 0.75rem !important;
+    padding-top: max(calc(env(safe-area-inset-top, 44px) + 32px), 68px) !important;
+    padding-bottom: 0.85rem !important;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
   }
 }
