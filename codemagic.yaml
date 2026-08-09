@@ -19,7 +19,7 @@ workflows:
           npm install -g @capacitor/cli @capacitor/assets
           rm -rf ios
           npx cap add ios
-          npx @capacitor/assets generate --ios || true
+          npx @capacitor/assets generate --ios --assetPath resources || true
           npx cap sync ios
           # Modificar Xcode LaunchScreen a Pantalla Completa (Aspect Fill)
           sed -i '' 's/contentMode="scaleAspectFit"/contentMode="scaleAspectFill"/g' ios/App/App/Base.lproj/LaunchScreen.storyboard || true

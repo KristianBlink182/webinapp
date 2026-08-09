@@ -14,8 +14,7 @@
          x-transition:leave="transition ease-in duration-500" 
          x-transition:leave-start="opacity-100" 
          x-transition:leave-end="opacity-0" 
-         style="position: fixed; inset: 0; z-index: 999999; background: #060913 url('{{ asset('resources/splash.png') }}') center/cover no-repeat; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: #ffffff;"
-         x-cloak>
+         style="position: fixed; inset: 0; z-index: 99999; background: #060913 url('{{ asset('splash.png') }}') center/cover no-repeat; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: #ffffff;"
         <div style="background: rgba(6, 9, 19, 0.7); backdrop-filter: blur(8px); position: absolute; inset: 0;"></div>
         <div style="position: relative; z-index: 10; padding: 2rem;">
             <img src="{{ asset('favicon.ico') }}" alt="LIVO" style="width: 90px; height: 90px; margin: 0 auto 1.5rem auto; object-fit: contain;">
