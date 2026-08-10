@@ -57,10 +57,10 @@ class _PagosScreenState extends State<PagosScreen> {
         border: Border.all(color: Colors.white10),
       ),
       child: Column(
-        crossAxisAlignment: Alignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.between,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
                 child: Text(
@@ -69,7 +69,7 @@ class _PagosScreenState extends State<PagosScreen> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, py: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: colorEstado.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
