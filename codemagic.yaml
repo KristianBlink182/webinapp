@@ -16,19 +16,23 @@ workflows:
         XCODE_PROJECT: "public/mobile_app/ios/Runner.xcodeproj"
         XCODE_SCHEME: "Runner"
     scripts:
-      - name: Get Flutter dependencies
+      - name: Initialize Flutter Native Project and Dependencies
         script: |
           cd public/mobile_app
-          flutter packages get
+          flutter create . --org pe.com.livo --project-name livo_app || true
+          flutter pub get
       - name: Auto-increment iOS Build Number
         script: |
           cd public/mobile_app/ios && agvtool new-version -all $BUILD_NUMBER || true
       - name: Build iOS Native IPA
         script: |
           cd public/mobile_app
-          flutter build ipa --release --export-options-plist=/Users/builder/export_options.plist
+          flutter build ipa --release --no-codesign || true
+          cd ios
+          xcode-project build-ipa --project "$XCODE_PROJECT" --scheme "$XCODE_SCHEME"
     artifacts:
       - public/mobile_app/build/ios/ipa/*.ipa
+      - build/ios/ipa/*.ipa
     publishing:
       app_store_connect:
         auth: integration
