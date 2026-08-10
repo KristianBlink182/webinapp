@@ -13,23 +13,23 @@ workflows:
         distribution_type: app_store
         bundle_identifier: pe.com.livo.app
       vars:
-        XCODE_PROJECT: "public/mobile_app/ios/Runner.xcodeproj"
+        XCODE_WORKSPACE: "public/mobile_app/ios/Runner.xcworkspace"
         XCODE_SCHEME: "Runner"
     scripts:
-      - name: Initialize Flutter Native Project and Dependencies
+      - name: Initialize Flutter Native Project and CocoaPods
         script: |
           cd public/mobile_app
-          flutter create . --org pe.com.livo --project-name livo_app || true
+          flutter create --org pe.com.livo --project-name livo_app .
           flutter pub get
+          cd ios
+          pod install
       - name: Auto-increment iOS Build Number
         script: |
           cd public/mobile_app/ios && agvtool new-version -all $BUILD_NUMBER || true
       - name: Build iOS Native IPA
         script: |
           cd public/mobile_app
-          flutter build ipa --release --no-codesign || true
-          cd ios
-          xcode-project build-ipa --project "$XCODE_PROJECT" --scheme "$XCODE_SCHEME"
+          xcode-project build-ipa --workspace "$XCODE_WORKSPACE" --scheme "$XCODE_SCHEME"
     artifacts:
       - public/mobile_app/build/ios/ipa/*.ipa
       - build/ios/ipa/*.ipa
