@@ -141,7 +141,7 @@ class _PagosScreenState extends State<PagosScreen> {
                 child: ElevatedButton.icon(
                   onPressed: isPagado || isRevision ? null : () {},
                   style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981)),
-                  icon: Icon(isPagado ? Icons.check_badge : Icons.credit_card, color: Colors.white, size: 18),
+                  icon: Icon(isPagado ? Icons.check_circle : Icons.credit_card, color: Colors.white, size: 18),
                   label: Text(isPagado ? '🟢 Pagado' : (isRevision ? '🟡 Validando' : '💳 Pagar Recibo'), style: const TextStyle(color: Colors.white)),
                 ),
               ),
