@@ -29,10 +29,15 @@ class _InvitadosListScreenState extends State<InvitadosListScreen> {
         title: const Text('➕ Pre-Autorizar Invitado', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            TextField(controller: _nCtrl, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(hintText: 'Nombre del visitante', hintStyle: TextStyle(color: Colors.white30))),
-            const SizedBox(height: 8),
-            TextField(controller: _dCtrl, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(hintText: 'DNI / Documento', hintStyle: TextStyle(color: Colors.white30))),
+            const Text('Nombre del visitante', style: TextStyle(color: Colors.white70, fontSize: 12)),
+            const SizedBox(height: 4),
+            TextField(controller: _nCtrl, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(filled: true, fillColor: Color(0xFF1E293B), hintText: 'Ej: Juan Pérez', hintStyle: TextStyle(color: Colors.white30))),
+            const SizedBox(height: 12),
+            const Text('DNI / Documento', style: TextStyle(color: Colors.white70, fontSize: 12)),
+            const SizedBox(height: 4),
+            TextField(controller: _dCtrl, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(filled: true, fillColor: Color(0xFF1E293B), hintText: 'Ej: 78945612', hintStyle: TextStyle(color: Colors.white30))),
           ],
         ),
         actions: [
@@ -128,6 +133,7 @@ class _MarketplaceListScreenState extends State<MarketplaceListScreen> {
         title: const Text('🛒 Publicar Producto', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             TextField(controller: _tCtrl, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(hintText: 'Título del producto', hintStyle: TextStyle(color: Colors.white30))),
             const SizedBox(height: 8),
@@ -176,7 +182,7 @@ class _MarketplaceListScreenState extends State<MarketplaceListScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.between,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(item['titulo'] ?? '', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
                               Text(item['precio'] ?? 'S/ 0.00', style: const TextStyle(color: Color(0xFFF59E0B), fontWeight: FontWeight.bold, fontSize: 16)),
@@ -383,6 +389,7 @@ class _MascotasListScreenState extends State<MascotasListScreen> {
         title: const Text('🐶 Registrar Mascota', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             TextField(controller: _nCtrl, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(hintText: 'Nombre de la mascota', hintStyle: TextStyle(color: Colors.white30))),
             const SizedBox(height: 8),
@@ -475,6 +482,7 @@ class _ReclamosListScreenState extends State<ReclamosListScreen> {
         title: const Text('💬 Enviar Reclamo', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             TextField(controller: _aCtrl, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(hintText: 'Asunto (Ej: Ruido pasillo)', hintStyle: TextStyle(color: Colors.white30))),
             const SizedBox(height: 8),
