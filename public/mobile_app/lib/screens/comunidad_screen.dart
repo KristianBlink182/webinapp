@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
+import 'detalle_screens.dart';
 
 class ComunidadScreen extends StatelessWidget {
   final String token;
 
   const ComunidadScreen({Key? key, required this.token}) : super(key: key);
+
+  void _abrir(BuildContext context, Widget screen) {
+    Navigator.of(context).push(MaterialPageRoute(builder: (context) => screen));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,12 +34,48 @@ class ComunidadScreen extends StatelessWidget {
               mainAxisSpacing: 12,
               childAspectRatio: 1.3,
               children: [
-                _buildCuadradoCard(icon: Icons.campaign, iconColor: const Color(0xFF10B981), title: 'Muro de Avisos', subtitle: 'Comunicados oficiales'),
-                _buildCuadradoCard(icon: Icons.shopping_bag_outlined, iconColor: const Color(0xFFF59E0B), title: 'Marketplace Vecinal', subtitle: 'Compra y venta'),
-                _buildCuadradoCard(icon: Icons.how_to_vote_outlined, iconColor: const Color(0xFF38BDF8), title: 'Votaciones & Acuerdos', subtitle: 'Decisiones junta'),
-                _buildCuadradoCard(icon: Icons.folder_open, iconColor: const Color(0xFFA855F7), title: 'Biblioteca Documentos', subtitle: 'Reglamentos PDF'),
-                _buildCuadradoCard(icon: Icons.pets, iconColor: const Color(0xFFEC4899), title: 'Mis Mascotas', subtitle: 'Registro del padrón'),
-                _buildCuadradoCard(icon: Icons.chat_bubble_outline, iconColor: const Color(0xFF14B8A6), title: 'Reclamos & Reportes', subtitle: 'Sugerencias a la junta'),
+                _buildCuadradoCard(
+                  icon: Icons.campaign,
+                  iconColor: const Color(0xFF10B981),
+                  title: 'Muro de Avisos',
+                  subtitle: 'Comunicados oficiales',
+                  onTap: () => _abrir(context, ComunicadosListScreen(token: token)),
+                ),
+                _buildCuadradoCard(
+                  icon: Icons.shopping_bag_outlined,
+                  iconColor: const Color(0xFFF59E0B),
+                  title: 'Marketplace Vecinal',
+                  subtitle: 'Compra y venta',
+                  onTap: () {},
+                ),
+                _buildCuadradoCard(
+                  icon: Icons.how_to_vote_outlined,
+                  iconColor: const Color(0xFF38BDF8),
+                  title: 'Votaciones & Acuerdos',
+                  subtitle: 'Decisiones junta',
+                  onTap: () {},
+                ),
+                _buildCuadradoCard(
+                  icon: Icons.folder_open,
+                  iconColor: const Color(0xFFA855F7),
+                  title: 'Biblioteca Documentos',
+                  subtitle: 'Reglamentos PDF',
+                  onTap: () {},
+                ),
+                _buildCuadradoCard(
+                  icon: Icons.pets,
+                  iconColor: const Color(0xFFEC4899),
+                  title: 'Mis Mascotas',
+                  subtitle: 'Registro del padrón',
+                  onTap: () => _abrir(context, MascotasListScreen(token: token)),
+                ),
+                _buildCuadradoCard(
+                  icon: Icons.chat_bubble_outline,
+                  iconColor: const Color(0xFF14B8A6),
+                  title: 'Reclamos & Reportes',
+                  subtitle: 'Sugerencias a la junta',
+                  onTap: () => _abrir(context, ReclamosListScreen(token: token)),
+                ),
               ],
             ),
           ],
@@ -43,9 +84,15 @@ class ComunidadScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCuadradoCard({required IconData icon, required Color iconColor, required String title, required String subtitle}) {
+  Widget _buildCuadradoCard({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
     return InkWell(
-      onTap: () {},
+      onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.all(16),

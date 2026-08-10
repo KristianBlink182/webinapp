@@ -7,6 +7,7 @@ import 'seguridad_screen.dart';
 import 'gestion_screen.dart';
 import 'comunidad_screen.dart';
 import 'login_screen.dart';
+import 'detalle_screens.dart';
 
 class DashboardScreen extends StatefulWidget {
   final String token;
@@ -54,6 +55,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (context) => const LoginScreen()),
     );
+  }
+
+  void _abrirPantalla(Widget screen) {
+    Navigator.of(context).push(MaterialPageRoute(builder: (context) => screen));
   }
 
   @override
@@ -136,7 +141,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Tarjeta Bienvenida + Atajo Siri
+          // 1. Tarjeta Bienvenida
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -267,28 +272,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 iconColor: const Color(0xFFA855F7),
                 title: 'Mis Pagos',
                 subtitle: 'Recibos y vouchers',
-                onTap: () => setState(() => _currentIndex = 1),
+                onTap: () => _abrirPantalla(PagosScreen(token: widget.token)),
               ),
               _buildServiceCard(
                 icon: Icons.campaign,
                 iconColor: const Color(0xFF10B981),
                 title: 'Avisos',
                 subtitle: 'Comunicados',
-                onTap: () => setState(() => _currentIndex = 4),
+                onTap: () => _abrirPantalla(ComunicadosListScreen(token: widget.token)),
               ),
               _buildServiceCard(
                 icon: Icons.pets,
                 iconColor: const Color(0xFFEC4899),
                 title: 'Mascotas',
                 subtitle: 'Registro',
-                onTap: () => setState(() => _currentIndex = 4),
+                onTap: () => _abrirPantalla(MascotasListScreen(token: widget.token)),
               ),
               _buildServiceCard(
                 icon: Icons.chat_bubble_outline,
                 iconColor: const Color(0xFF14B8A6),
                 title: 'Reclamos',
                 subtitle: 'Sugerencias',
-                onTap: () => setState(() => _currentIndex = 4),
+                onTap: () => _abrirPantalla(ReclamosListScreen(token: widget.token)),
               ),
             ],
           ),

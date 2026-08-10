@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
+import 'detalle_screens.dart';
 
 class SeguridadScreen extends StatelessWidget {
   final String token;
 
   const SeguridadScreen({Key? key, required this.token}) : super(key: key);
+
+  void _abrir(BuildContext context, Widget screen) {
+    Navigator.of(context).push(MaterialPageRoute(builder: (context) => screen));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +27,7 @@ class SeguridadScreen extends StatelessWidget {
             iconColor: const Color(0xFF38BDF8),
             title: 'Mis Invitados',
             subtitle: 'Genera pases de ingreso para la Portería.',
-            onTap: () {},
+            onTap: () => _abrir(context, InvitadosListScreen(token: token)),
           ),
           const SizedBox(height: 12),
           _buildOpcionCard(
@@ -30,7 +35,7 @@ class SeguridadScreen extends StatelessWidget {
             iconColor: const Color(0xFF10B981),
             title: 'Cámara de Seguridad en Vivo',
             subtitle: 'Transmisión de la puerta principal (🔴 EN VIVO)',
-            onTap: () {},
+            onTap: () => _abrir(context, CamaraScreen(token: token)),
           ),
         ],
       ),
