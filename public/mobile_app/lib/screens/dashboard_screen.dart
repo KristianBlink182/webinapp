@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../api_service.dart';
 import 'pagos_screen.dart';
+import 'seguridad_screen.dart';
+import 'gestion_screen.dart';
 import 'comunidad_screen.dart';
 import 'login_screen.dart';
 
@@ -34,6 +37,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(backgroundColor: Colors.green, content: Text(result['message'])),
       );
+    }
+  }
+
+  void _abrirSiriShortcut() async {
+    final Uri url = Uri.parse('https://www.icloud.com/shortcuts/653d6f68abc0490a81e73c2773d36a90');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
     }
   }
 
@@ -97,9 +107,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         children: [
           _buildEscritorioTab(),
           PagosScreen(token: widget.token),
-          ComunidadScreen(token: widget.token, initialTabIndex: 0), // Seguridad
-          ComunidadScreen(token: widget.token, initialTabIndex: 1), // Gestión
-          ComunidadScreen(token: widget.token, initialTabIndex: 2), // Comunidad
+          SeguridadScreen(token: widget.token),
+          GestionScreen(token: widget.token),
+          ComunidadScreen(token: widget.token),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -126,7 +136,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Tarjeta Bienvenida
+          // 1. Tarjeta Bienvenida + Atajo Siri
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -145,6 +155,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Text(
                   'Departamento ${widget.departamentoNumero} — ${widget.condominioNombre}',
                   style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 14, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  height: 42,
+                  child: ElevatedButton.icon(
+                    onPressed: _abrirSiriShortcut,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0284C7),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    icon: const Icon(Icons.phone_iphone, color: Colors.white, size: 18),
+                    label: const Text('📱 Instalar Atajo de Voz Siri (1 Clic)', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+                  ),
                 ),
               ],
             ),

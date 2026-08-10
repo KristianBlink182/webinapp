@@ -26,9 +26,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final prefs = await SharedPreferences.getInstance();
     final savedEmail = prefs.getString('saved_email');
     if (savedEmail != null && savedEmail.isNotEmpty) {
-      setState(() {
-        _emailController.text = savedEmail;
-      });
+      setState(() => _emailController.text = savedEmail);
     }
   }
 
@@ -44,16 +42,13 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     setState(() => _isLoading = true);
-
     final result = await ApiService.login(email, password);
-
     setState(() => _isLoading = false);
 
     if (result['success'] == true) {
       final token = result['token'];
       final user = result['user'];
 
-      // Guardar datos en el chip del teléfono
       final prefs = await SharedPreferences.getInstance();
       if (_recordarUsuario) {
         await prefs.setString('auth_token', token);
@@ -93,10 +88,7 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 Image.asset('assets/logo.png', height: 80),
                 const SizedBox(height: 12),
-                const Text(
-                  'App de Residentes',
-                  style: TextStyle(color: Color(0xFF38BDF8), fontSize: 16, fontWeight: FontWeight.bold),
-                ),
+                const Text('App de Residentes', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 16, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 32),
                 Container(
                   padding: const EdgeInsets.all(24.0),
@@ -108,15 +100,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Iniciar Sesión',
-                        style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
-                      ),
+                      const Text('Iniciar Sesión', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
-                      const Text(
-                        'Ingresa tus credenciales para acceder a tu cuenta.',
-                        style: TextStyle(color: Colors.white60, fontSize: 13),
-                      ),
+                      const Text('Ingresa tus credenciales para acceder a tu cuenta.', style: TextStyle(color: Colors.white60, fontSize: 13)),
                       const SizedBox(height: 24),
                       const Text('Correo electrónico', style: TextStyle(color: Colors.white70, fontSize: 12)),
                       const SizedBox(height: 6),
@@ -128,10 +114,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           fillColor: const Color(0xFF1E293B),
                           hintText: 'ejemplo@correo.com',
                           hintStyle: const TextStyle(color: Colors.white30),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: BorderSide.none,
-                          ),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -146,15 +129,10 @@ class _LoginScreenState extends State<LoginScreen> {
                           fillColor: const Color(0xFF1E293B),
                           hintText: '••••••••',
                           hintStyle: const TextStyle(color: Colors.white30),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: BorderSide.none,
-                          ),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
                         ),
                       ),
                       const SizedBox(height: 12),
-
-                      // Checkbox Recordar Usuario
                       Row(
                         children: [
                           Checkbox(
@@ -166,7 +144,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         ],
                       ),
                       const SizedBox(height: 16),
-
                       SizedBox(
                         width: double.infinity,
                         height: 50,

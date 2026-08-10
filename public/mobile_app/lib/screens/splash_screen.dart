@@ -15,10 +15,10 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _checkSesionGuardada();
+    _checkSesion();
   }
 
-  void _checkSesionGuardada() async {
+  void _checkSesion() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('auth_token');
     final vecinoNombre = prefs.getString('vecino_nombre') ?? 'Vecino';
@@ -27,7 +27,6 @@ class _SplashScreenState extends State<SplashScreen> {
 
     Timer(const Duration(seconds: 5), () {
       if (token != null && token.isNotEmpty) {
-        // Si ya está logueado, pasa directo al Dashboard
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (context) => DashboardScreen(
@@ -39,7 +38,6 @@ class _SplashScreenState extends State<SplashScreen> {
           ),
         );
       } else {
-        // Si no hay sesión, va al Login
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const LoginScreen()),
         );
@@ -54,14 +52,9 @@ class _SplashScreenState extends State<SplashScreen> {
       body: Stack(
         children: [
           Positioned.fill(
-            child: Image.asset(
-              'assets/splash.png',
-              fit: BoxFit.cover,
-            ),
+            child: Image.asset('assets/splash.png', fit: BoxFit.cover),
           ),
-          Container(
-            color: Colors.black.withOpacity(0.3),
-          ),
+          Container(color: Colors.black.withOpacity(0.3)),
         ],
       ),
     );

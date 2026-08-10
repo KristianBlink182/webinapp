@@ -1,8 +1,6 @@
 class ApiConfig {
-  // URL Oficial de la API RESTful en Producción
   static const String baseUrl = 'https://vecino.livo.com.pe/api/v1';
 
-  // Endpoints
   static const String login = '$baseUrl/auth/login';
   static const String me = '$baseUrl/auth/me';
   static const String logout = '$baseUrl/auth/logout';
