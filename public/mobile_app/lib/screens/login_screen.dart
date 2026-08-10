@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../api_service.dart';
 import 'dashboard_screen.dart';
 
@@ -13,6 +14,23 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _recordarUsuario = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarEmailGuardado();
+  }
+
+  void _cargarEmailGuardado() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedEmail = prefs.getString('saved_email');
+    if (savedEmail != null && savedEmail.isNotEmpty) {
+      setState(() {
+        _emailController.text = savedEmail;
+      });
+    }
+  }
 
   void _iniciarSesion() async {
     final email = _emailController.text.trim();
@@ -34,6 +52,16 @@ class _LoginScreenState extends State<LoginScreen> {
     if (result['success'] == true) {
       final token = result['token'];
       final user = result['user'];
+
+      // Guardar datos en el chip del teléfono
+      final prefs = await SharedPreferences.getInstance();
+      if (_recordarUsuario) {
+        await prefs.setString('auth_token', token);
+        await prefs.setString('saved_email', email);
+        await prefs.setString('vecino_nombre', user['name'] ?? 'Vecino');
+        await prefs.setString('departamento_numero', user['departamento_numero'] ?? 'S/N');
+        await prefs.setString('condominio_nombre', user['condominio_nombre'] ?? 'LIVO');
+      }
 
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
@@ -124,7 +152,21 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 12),
+
+                      // Checkbox Recordar Usuario
+                      Row(
+                        children: [
+                          Checkbox(
+                            value: _recordarUsuario,
+                            activeColor: const Color(0xFF0284C7),
+                            onChanged: (val) => setState(() => _recordarUsuario = val ?? true),
+                          ),
+                          const Text('Recordar usuario', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
                       SizedBox(
                         width: double.infinity,
                         height: 50,

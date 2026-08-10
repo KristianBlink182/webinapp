@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../api_service.dart';
 import 'pagos_screen.dart';
 import 'comunidad_screen.dart';
+import 'login_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   final String token;
@@ -35,6 +37,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  void _cerrarSesion() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('auth_token');
+
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -48,12 +59,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
             icon: const Icon(Icons.notifications_none, color: Colors.white),
             onPressed: () {},
           ),
-          CircleAvatar(
-            backgroundColor: const Color(0xFF1E293B),
-            child: Text(
-              widget.vecinoNombre.isNotEmpty ? widget.vecinoNombre[0] : 'V',
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'logout') _cerrarSesion();
+            },
+            color: const Color(0xFF0F172A),
+            child: CircleAvatar(
+              backgroundColor: const Color(0xFF1E293B),
+              child: Text(
+                widget.vecinoNombre.isNotEmpty ? widget.vecinoNombre[0] : 'V',
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
             ),
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                enabled: false,
+                child: Text('Dpto. ${widget.departamentoNumero}', style: const TextStyle(color: Colors.white70, fontSize: 12)),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem(
+                value: 'logout',
+                child: Row(
+                  children: [
+                    Icon(Icons.logout, color: Colors.redAccent, size: 18),
+                    SizedBox(width: 8),
+                    Text('Cerrar Sesión', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+            ],
           ),
           const SizedBox(width: 16),
         ],
@@ -63,9 +97,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         children: [
           _buildEscritorioTab(),
           PagosScreen(token: widget.token),
-          ComunidadScreen(token: widget.token),
-          ComunidadScreen(token: widget.token),
-          ComunidadScreen(token: widget.token),
+          ComunidadScreen(token: widget.token, initialTabIndex: 0), // Seguridad
+          ComunidadScreen(token: widget.token, initialTabIndex: 1), // Gestión
+          ComunidadScreen(token: widget.token, initialTabIndex: 2), // Comunidad
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -92,7 +126,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Tarjeta Bienvenida + Atajo Siri
+          // 1. Tarjeta Bienvenida
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
