@@ -1,43 +1,34 @@
 workflows:
   ios-workflow:
-    name: iOS Build and Publish
+    name: iOS Flutter Native Build and Publish
     instance_type: mac_mini_m2
     max_build_duration: 60
     integrations:
       app_store_connect: Codemagic Livo
     environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
       ios_signing:
         distribution_type: app_store
         bundle_identifier: pe.com.livo.app
       vars:
-        XCODE_PROJECT: "ios/App/App.xcodeproj"
-        XCODE_SCHEME: "App"
+        XCODE_PROJECT: "public/mobile_app/ios/Runner.xcodeproj"
+        XCODE_SCHEME: "Runner"
     scripts:
-      - name: Install dependencies and generate iOS project
+      - name: Get Flutter dependencies
         script: |
-          npm install
-          npm install -g @capacitor/cli @capacitor/assets
-          rm -rf ios
-          npx cap add ios
-          npx @capacitor/assets generate --ios --assetPath resources || true
-          npx cap sync ios
-          # Modificar Xcode LaunchScreen a Pantalla Completa (Aspect Fill) y usar Splash
-          sed -i '' 's/contentMode="scaleAspectFit"/contentMode="scaleAspectFill"/g' ios/App/App/Base.lproj/LaunchScreen.storyboard || true
-          sed -i '' 's/image="icon"/image="Splash"/g' ios/App/App/Base.lproj/LaunchScreen.storyboard || true
-      - name: Set Xcode Bundle Identifier to pe.com.livo.app
+          cd public/mobile_app
+          flutter packages get
+      - name: Auto-increment iOS Build Number
         script: |
-          sed -i '' 's/PRODUCT_BUNDLE_IDENTIFIER = .*/PRODUCT_BUNDLE_IDENTIFIER = pe.com.livo.app;/g' ios/App/App.xcodeproj/project.pbxproj
-      - name: Auto-increment iOS Build Number for Apple
+          cd public/mobile_app/ios && agvtool new-version -all $BUILD_NUMBER || true
+      - name: Build iOS Native IPA
         script: |
-          cd ios/App && agvtool new-version -all $BUILD_NUMBER || true
-      - name: Set up automatic code signing
-        script: |
-          xcode-project use-profiles
-      - name: Build iOS App
-        script: |
-          xcode-project build-ipa --project "$XCODE_PROJECT" --scheme "$XCODE_SCHEME"
+          cd public/mobile_app
+          flutter build ipa --release --export-options-plist=/Users/builder/export_options.plist
     artifacts:
-      - build/ios/ipa/*.ipa
+      - public/mobile_app/build/ios/ipa/*.ipa
     publishing:
       app_store_connect:
         auth: integration
