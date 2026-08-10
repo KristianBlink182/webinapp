@@ -13,7 +13,6 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    // Temporizador de 5 segundos de Splash Nativo
     Timer(const Duration(seconds: 5), () {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => const LoginScreen()),
@@ -27,14 +26,12 @@ class _SplashScreenState extends State<SplashScreen> {
       backgroundColor: const Color(0xFF060913),
       body: Stack(
         children: [
-          // Imagen panorámica de fondo completa
           Positioned.fill(
             child: Image.asset(
-              'public/splash.png',
+              'assets/splash.png',
               fit: BoxFit.cover,
             ),
           ),
-          // Capa oscura para contraste
           Container(
             color: Colors.black.withOpacity(0.3),
           ),

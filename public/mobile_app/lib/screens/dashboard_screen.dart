@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/api_service.dart';
+import '../api_service.dart';
 
 class DashboardScreen extends StatefulWidget {
   final String token;
@@ -40,7 +40,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF060913),
         elevation: 0,
-        title: Image.asset('public/images/logo.png', height: 32),
+        title: Image.asset('assets/logo.png', height: 32),
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_none, color: Colors.white),
@@ -61,7 +61,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: Column(
           crossAxisAlignment: Alignment.start,
           children: [
-            // Targeta Bienvenida
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -85,8 +84,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
             const SizedBox(height: 16),
-
-            // Tarjeta Estado de Cuenta
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -105,8 +102,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
             const SizedBox(height: 16),
-
-            // Botón SOS de Pánico
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -141,8 +136,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ],
         ),
       ),
-
-      // Barra Inferior de Navegación Nativa (Bottom Navigation Bar)
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/api_service.dart';
+import '../api_service.dart';
 import 'dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -63,16 +63,13 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Logo LIVO 3D
-                Image.asset('public/images/logo.png', height: 80),
+                Image.asset('assets/logo.png', height: 80),
                 const SizedBox(height: 12),
                 const Text(
                   'App de Residentes',
                   style: TextStyle(color: Color(0xFF38BDF8), fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 32),
-
-                // Tarjeta de Formulario Nativo
                 Container(
                   padding: const EdgeInsets.all(24.0),
                   decoration: BoxDecoration(
@@ -93,8 +90,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         style: TextStyle(color: Colors.white60, fontSize: 13),
                       ),
                       const SizedBox(height: 24),
-
-                      // Campo Correo
                       const Text('Correo electrónico', style: TextStyle(color: Colors.white70, fontSize: 12)),
                       const SizedBox(height: 6),
                       TextField(
@@ -112,8 +107,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-
-                      // Campo Contraseña
                       const Text('Contraseña', style: TextStyle(color: Colors.white70, fontSize: 12)),
                       const SizedBox(height: 6),
                       TextField(
@@ -132,8 +125,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       const SizedBox(height: 24),
-
-                      // Botón Entrar
                       SizedBox(
                         width: double.infinity,
                         height: 50,
