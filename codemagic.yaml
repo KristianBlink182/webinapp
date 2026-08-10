@@ -16,13 +16,12 @@ workflows:
         XCODE_WORKSPACE: "public/mobile_app/ios/Runner.xcworkspace"
         XCODE_SCHEME: "Runner"
     scripts:
-      - name: Initialize Flutter Native Project and CocoaPods
+      - name: Initialize Flutter Native iOS Project
         script: |
           cd public/mobile_app
           flutter create --org pe.com.livo --project-name livo_app .
           flutter pub get
-          cd ios
-          pod install
+          flutter build ios --release --no-codesign
       - name: Auto-increment iOS Build Number
         script: |
           cd public/mobile_app/ios && agvtool new-version -all $BUILD_NUMBER || true
