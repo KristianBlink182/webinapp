@@ -27,6 +27,7 @@ workflows:
         script: |
           cd public/mobile_app/ios
           sed -i '' 's/PRODUCT_BUNDLE_IDENTIFIER = .*/PRODUCT_BUNDLE_IDENTIFIER = pe.com.livo.app;/g' Runner.xcodeproj/project.pbxproj
+          plutil -insert ITSAppUsesNonExoticEncryption -bool NO Runner/Info.plist || true
       - name: Set up automatic code signing on Xcode project
         script: |
           xcode-project use-profiles --project "$XCODE_PROJECT"
