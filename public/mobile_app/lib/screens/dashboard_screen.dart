@@ -90,9 +90,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 gradient: const LinearGradient(colors: [Color(0xFF7C3AED), Color(0xFF4C1D95)]),
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: const Column(
-                crossAxisAlignment: Alignment.start,
-                children: [
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
                   Text('ESTADO DE CUENTA', style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold)),
                   SizedBox(height: 6),
                   Text('S/ 0.00', style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
@@ -110,7 +110,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 border: Border.all(color: _sosEnviado ? Colors.green : Colors.red),
               ),
               child: Column(
-                crossAxisAlignment: Alignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     _sosEnviado ? '🟢 AYUDA EN CAMINO' : '🚨 BOTÓN DE PÁNICO S.O.S.',
