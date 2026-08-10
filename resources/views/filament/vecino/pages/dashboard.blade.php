@@ -455,10 +455,10 @@ $condoSlug = rawurlencode($condoNombre);
             @endif
         </div>
 
-        {{-- 5. SERVICIOS DEL CONDOMINIO --}}
+       {{-- 5. SERVICIOS DEL CONDOMINIO --}}
 <div class="livo-section-title">SERVICIOS DEL CONDOMINIO</div>
 <div class="livo-bottom-grid">
-    <a href="/edificio/{{ $condoSlug }}/finanzas-hub" class="livo-service-card">
+    <a href="/edificio/{{ $condoSlug }}/pagos" class="livo-service-card">
         <div class="livo-service-icon-box" style="background: rgba(168, 85, 247, 0.2); border-color: #a855f7;">
             <svg style="width: 24px; height: 24px; color: #a855f7;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
         </div>
@@ -466,7 +466,7 @@ $condoSlug = rawurlencode($condoNombre);
         <div class="livo-service-desc">Recibos y vouchers</div>
     </a>
 
-    <a href="/edificio/{{ $condoSlug }}/comunidad-hub" class="livo-service-card">
+    <a href="/edificio/{{ $condoSlug }}/comunicados" class="livo-service-card">
         <div class="livo-service-icon-box" style="background: rgba(16, 185, 129, 0.2); border-color: #10b981;">
             <svg style="width: 24px; height: 24px; color: #10b981;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/></svg>
         </div>
@@ -474,7 +474,7 @@ $condoSlug = rawurlencode($condoNombre);
         <div class="livo-service-desc">Comunicados</div>
     </a>
 
-    <a href="/edificio/{{ $condoSlug }}/comunidad-hub" class="livo-service-card">
+    <a href="/edificio/{{ $condoSlug }}/mascotas" class="livo-service-card">
         <div class="livo-service-icon-box" style="background: rgba(236, 72, 153, 0.2); border-color: #ec4899;">
             <svg style="width: 24px; height: 24px; color: #ec4899;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
         </div>
@@ -482,7 +482,7 @@ $condoSlug = rawurlencode($condoNombre);
         <div class="livo-service-desc">Registro</div>
     </a>
 
-    <a href="/edificio/{{ $condoSlug }}/comunidad-hub" class="livo-service-card">
+    <a href="/edificio/{{ $condoSlug }}/reclamos" class="livo-service-card">
         <div class="livo-service-icon-box" style="background: rgba(20, 184, 166, 0.2); border-color: #14b8a6;">
             <svg style="width: 24px; height: 24px; color: #14b8a6;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
         </div>

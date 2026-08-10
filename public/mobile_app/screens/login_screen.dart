@@ -1,0 +1,161 @@
+import 'package:flutter/material.dart';
+import '../services/api_service.dart';
+import 'dashboard_screen.dart';
+
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({Key? key}) : super(key: key);
+
+  @override
+  _LoginScreenState createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _isLoading = false;
+
+  void _iniciarSesion() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor complete todos los campos.')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    final result = await ApiService.login(email, password);
+
+    setState(() => _isLoading = false);
+
+    if (result['success'] == true) {
+      final token = result['token'];
+      final user = result['user'];
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => DashboardScreen(
+            token: token,
+            vecinoNombre: user['name'] ?? 'Vecino',
+            departamentoNumero: user['departamento_numero'] ?? 'S/N',
+            condominioNombre: user['condominio_nombre'] ?? 'LIVO',
+          ),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result['message'] ?? 'Error al iniciar sesión.')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF060913),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Logo LIVO 3D
+                Image.asset('public/images/logo.png', height: 80),
+                const SizedBox(height: 12),
+                const Text(
+                  'App de Residentes',
+                  style: TextStyle(color: Color(0xFF38BDF8), fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 32),
+
+                // Tarjeta de Formulario Nativo
+                Container(
+                  padding: const EdgeInsets.all(24.0),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0F172A),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.white10),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: Alignment.start,
+                    children: [
+                      const Text(
+                        'Iniciar Sesión',
+                        style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Ingresa tus credenciales para acceder a tu cuenta.',
+                        style: TextStyle(color: Colors.white60, fontSize: 13),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Campo Correo
+                      const Text('Correo electrónico', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: _emailController,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: const Color(0xFF1E293B),
+                          hintText: 'ejemplo@correo.com',
+                          hintStyle: const TextStyle(color: Colors.white30),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Campo Contraseña
+                      const Text('Contraseña', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: _passwordController,
+                        obscureText: true,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: const Color(0xFF1E293B),
+                          hintText: '••••••••',
+                          hintStyle: const TextStyle(color: Colors.white30),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Botón Entrar
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed: _isLoading ? null : _iniciarSesion,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFF59E0B),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: _isLoading
+                              ? const CircularProgressIndicator(color: Colors.white)
+                              : const Text('Entrar', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

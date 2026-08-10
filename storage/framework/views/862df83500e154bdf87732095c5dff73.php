@@ -1,1 +1,0 @@
-<?php echo $__env->make("filament.vecino.components.mobile-navbar", array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\laragon\www\sistema-condominio\storage\framework\views/fbdb29a2b4cea89eedceaa9bcb2a738d.blade.php ENDPATH**/ ?>

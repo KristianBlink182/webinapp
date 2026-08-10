@@ -3,32 +3,31 @@
     $isLoginRoute = request()->routeIs('*.login') || str_contains(request()->url(), '/login');
 @endphp
 
-{{-- 1. SEPARADOR FÍSICO SUPERIOR PARA IPHONE --}}
+{{-- 1. SEPARADOR FÍSICO SUPERIOR --}}
 <div class="livo-ios-statusbar-spacer"></div>
 
-{{-- 2. PORTADA DE CARGA SPLASH SCREEN DE 5 SEGUNDOS (SOLO EN MÓVILES) --}}
-<div class="livo-splash-overlay"
-     x-data="{ 
-         showSplash: !sessionStorage.getItem('livo_splash_shown') 
-     }" 
-     x-init="
-         if (showSplash) {
-             setTimeout(() => { 
-                 showSplash = false; 
-                 sessionStorage.setItem('livo_splash_shown', 'true'); 
-             }, 5000);
-         }
-     " 
-     x-show="showSplash" 
-     x-transition:leave="transition ease-in duration-500" 
-     x-transition:leave-start="opacity-100" 
-     x-transition:leave-end="opacity-0" 
-     style="position: fixed; inset: 0; z-index: 2147483647 !important; background: #060913 url('{{ asset('splash.png') }}') center/cover no-repeat;"
-     x-cloak>
-</div>
-
-{{-- 3. BARRA INFERIOR DE NAVEGACIÓN (SOLO CUANDO EL VECINO INICIA SESIÓN) --}}
+{{-- 2. PORTADA DE CARGA SPLASH SCREEN DE 5 SEGUNDOS (SOLO EN MÓVILES Y CUANDO INICIA SESIÓN) --}}
 @if($isLoggedIn && !$isLoginRoute)
+    <div class="livo-splash-overlay"
+         x-data="{ 
+             showSplash: !sessionStorage.getItem('livo_splash_shown') 
+         }" 
+         x-init="
+             if (showSplash) {
+                 setTimeout(() => { 
+                     showSplash = false; 
+                     sessionStorage.setItem('livo_splash_shown', 'true'); 
+                 }, 5000);
+             }
+         " 
+         x-show="showSplash" 
+         x-transition:leave="transition ease-in duration-500" 
+         x-transition:leave-start="opacity-100" 
+         x-transition:leave-end="opacity-0" 
+         style="position: fixed; inset: 0; z-index: 2147483647 !important; background: #060913 url('{{ asset('splash.png') }}') center/cover no-repeat;"
+         x-cloak>
+    </div>
+
     @php
         $tenant = \Filament\Facades\Filament::getTenant();
         $condoSlug = $tenant ? rawurlencode($tenant->nombre) : 'edificio';
