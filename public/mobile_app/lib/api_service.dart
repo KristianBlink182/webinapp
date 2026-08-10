@@ -8,7 +8,10 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse(ApiConfig.login),
-        headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
         body: jsonEncode({
           'email': email,
           'password': password,
@@ -16,11 +19,19 @@ class ApiService {
       );
 
       final data = jsonDecode(response.body);
-      return data;
+      
+      if (response.statusCode == 200) {
+        return data;
+      } else {
+        return {
+          'success': false,
+          'message': data['message'] ?? 'HTTP ${response.statusCode}: Error de autenticación.',
+        };
+      }
     } catch (e) {
       return {
         'success': false,
-        'message': 'Error de conexión con el servidor LIVO. Verifique su internet.',
+        'message': 'Error de red: $e',
       };
     }
   }

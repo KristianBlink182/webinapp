@@ -17,23 +17,24 @@ use Filament\Panel;
 
 class User extends Authenticatable implements FilamentUser, HasTenants
 {
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
 
     protected $fillable = [
-    'name',
-    'email',
-    'password',
-    'role',
-    'departamento_id',
-    'must_change_password',
-    'telefono',
-];
+        'name',
+        'email',
+        'password',
+        'role',
+        'departamento_id',
+        'must_change_password',
+        'telefono',
+    ];
+
     protected $hidden = ['password', 'remember_token'];
 
     /**
      * ACCESO A PANELES
      */
-   public function canAccessPanel(Panel $panel): bool
+    public function canAccessPanel(Panel $panel): bool
     {
         $role = strtolower($this->role ?? '');
 
@@ -73,7 +74,7 @@ class User extends Authenticatable implements FilamentUser, HasTenants
         return collect([]);
     }
 
-  public function canAccessTenant(Model $tenant): bool
+    public function canAccessTenant(Model $tenant): bool
     {
         $role = strtolower($this->role ?? '');
 

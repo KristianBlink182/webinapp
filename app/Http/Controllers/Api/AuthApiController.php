@@ -16,49 +16,54 @@ class AuthApiController extends Controller
      */
     public function login(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'email'    => 'required|email',
-            'password' => 'required|string',
-        ]);
+        try {
+            $email = trim($request->input('email', ''));
+            $password = trim($request->input('password', ''));
 
-        if ($validator->fails()) {
+            if (empty($email) || empty($password)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Por favor ingrese correo y contraseña.',
+                ], 422);
+            }
+
+            $user = User::where('email', $email)->first();
+
+            if (!$user || !Hash::check($password, $user->password)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Credenciales incorrectas. Verifique su correo o contraseña.',
+                ], 401);
+            }
+
+            // Crear Token de Acceso Nativo de Sanctum
+            $token = $user->createToken('livo_vecino_app')->plainTextToken;
+
+            // Cargar información del Departamento y Condominio
+            $dpto = $user->departamento;
+            $condo = $dpto?->condominio;
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Bienvenido a LIVO Vecinos',
+                'token'   => $token,
+                'user'    => [
+                    'id'                  => $user->id,
+                    'name'                => $user->name,
+                    'email'               => $user->email,
+                    'departamento_id'     => $user->departamento_id,
+                    'departamento_numero' => $dpto?->numero ?? '100',
+                    'condominio_id'       => $condo?->id ?? 1,
+                    'condominio_nombre'   => $condo?->nombre ?? 'Edificio LIVO',
+                ]
+            ], 200);
+
+        } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error de validación',
-                'errors'  => $validator->errors(),
-            ], 422);
+                'message' => 'Error 500: ' . $e->getMessage(),
+            ], 500);
         }
-
-        $user = User::where('email', $request->email)->first();
-
-        if (!$user || !Hash::check($request->password, $user->password)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Credenciales incorrectas. Verifique su correo o contraseña.',
-            ], 401);
-        }
-
-        // Crear Token de Acceso Nativo de Sanctum
-        $token = $user->createToken('livo_vecino_app')->plainTextToken;
-
-        // Cargar información del Departamento y Condominio
-        $dpto = $user->departamento;
-        $condominio = $dpto?->condominio;
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Bienvenido a LIVO Vecinos',
-            'token'   => $token,
-            'user'    => [
-                'id'                  => $user->id,
-                'name'                => $user->name,
-                'email'               => $user->email,
-                'departamento_id'     => $user->departamento_id,
-                'departamento_numero' => $dpto?->numero ?? 'S/N',
-                'condominio_id'       => $condominio?->id,
-                'condominio_nombre'   => $condominio?->nombre ?? 'Edificio LIVO',
-            ]
-        ], 200);
     }
 
     /**
@@ -66,22 +71,29 @@ class AuthApiController extends Controller
      */
     public function me(Request $request)
     {
-        $user = $request->user();
-        $dpto = $user->departamento;
-        $condominio = $dpto?->condominio;
+        try {
+            $user = $request->user();
+            $dpto = $user->departamento;
+            $condo = $dpto?->condominio;
 
-        return response()->json([
-            'success' => true,
-            'user'    => [
-                'id'                  => $user->id,
-                'name'                => $user->name,
-                'email'               => $user->email,
-                'departamento_id'     => $user->departamento_id,
-                'departamento_numero' => $dpto?->numero ?? 'S/N',
-                'condominio_id'       => $condominio?->id,
-                'condominio_nombre'   => $condominio?->nombre ?? 'Edificio LIVO',
-            ]
-        ], 200);
+            return response()->json([
+                'success' => true,
+                'user'    => [
+                    'id'                  => $user->id,
+                    'name'                => $user->name,
+                    'email'               => $user->email,
+                    'departamento_id'     => $user->departamento_id,
+                    'departamento_numero' => $dpto?->numero ?? '100',
+                    'condominio_id'       => $condo?->id ?? 1,
+                    'condominio_nombre'   => $condo?->nombre ?? 'Edificio LIVO',
+                ]
+            ], 200);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener perfil: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**
@@ -89,11 +101,18 @@ class AuthApiController extends Controller
      */
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
+        try {
+            $request->user()->currentAccessToken()->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Sesión cerrada correctamente.',
-        ], 200);
+            return response()->json([
+                'success' => true,
+                'message' => 'Sesión cerrada correctamente.',
+            ], 200);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al cerrar sesión.',
+            ], 500);
+        }
     }
 }
