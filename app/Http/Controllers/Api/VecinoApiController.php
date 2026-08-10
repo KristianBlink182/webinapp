@@ -8,257 +8,294 @@ use App\Models\Comunicado;
 use App\Models\AlertaSOS;
 use App\Models\Mascota;
 use App\Models\Reclamo;
+use App\Models\Visita;
+use App\Models\Anuncio;
+use App\Models\Votacion;
+use App\Models\Documento;
+use App\Models\AreaComun;
+use App\Models\Reserva;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 
 class VecinoApiController extends Controller
 {
-    /**
-     * 1. DATOS DEL DASHBOARD PRINCIPAL DE LA APP NATIVA
-     */
+    /** 1. DASHBOARD PRINCIPAL */
     public function dashboard(Request $request)
     {
-        $user = $request->user();
-        $dpto = $user->departamento;
-        $condominio = $dpto?->condominio;
+        try {
+            $user = $request->user();
+            $dpto = $user->departamento;
+            $condominio = $dpto?->condominio;
 
-        if (!$dpto) {
+            $saldoPendiente = Pago::where('departamento_id', $dpto?->id)
+                ->whereIn('estado', ['Pendiente', 'pendiente'])
+                ->sum('monto') ?? 0;
+
+            $ultimoComunicado = Comunicado::where('condominio_id', $condominio?->id)->latest()->first();
+            $alertaActiva = AlertaSOS::where('departamento_id', $dpto?->id)->where('estado', 'Pendiente')->first();
+
             return response()->json([
-                'success' => false,
-                'message' => 'Usuario no tiene un departamento asignado.',
-            ], 404);
+                'success' => true,
+                'data'    => [
+                    'vecino_nombre'       => $user->name,
+                    'departamento_numero' => $dpto?->numero ?? '100',
+                    'condominio_nombre'   => $condominio?->nombre ?? 'Edificio LIVO',
+                    'estado_cuenta'       => [
+                        'monto_pendiente'  => (float) $saldoPendiente,
+                        'monto_formateado' => 'S/ ' . number_format((float)$saldoPendiente, 2, '.', ''),
+                        'esta_al_dia'      => $saldoPendiente <= 0,
+                    ],
+                    'ultimo_comunicado'   => $ultimoComunicado ? [
+                        'id'        => $ultimoComunicado->id,
+                        'titulo'    => $ultimoComunicado->titulo,
+                        'contenido' => $ultimoComunicado->contenido,
+                        'fecha'     => $ultimoComunicado->created_at->format('d/m/Y'),
+                    ] : null,
+                    'alerta_sos_activa'   => $alertaActiva ? true : false,
+                ]
+            ], 200);
+        } catch (\Throwable $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
-
-        // Deuda total acumulada del departamento
-        $saldoPendiente = Pago::where('departamento_id', $dpto->id)
-            ->whereIn('estado', ['Pendiente', 'pendiente'])
-            ->sum('monto') ?? 0;
-
-        // Último comunicado publicado en el condominio
-        $ultimoComunicado = Comunicado::where('condominio_id', $condominio?->id)
-            ->latest()
-            ->first();
-
-        // Alerta S.O.S activa si la hubiera
-        $alertaActiva = AlertaSOS::where('departamento_id', $dpto->id)
-            ->where('estado', 'Pendiente')
-            ->first();
-
-        return response()->json([
-            'success' => true,
-            'data'    => [
-                'vecino_nombre'       => $user->name,
-                'departamento_numero' => $dpto->numero,
-                'condominio_nombre'   => $condominio?->nombre ?? 'Edificio LIVO',
-                'estado_cuenta'       => [
-                    'monto_pendiente'  => (float) $saldoPendiente,
-                    'monto_formateado' => 'S/ ' . number_format((float)$saldoPendiente, 2, '.', ''),
-                    'esta_al_dia'      => $saldoPendiente <= 0,
-                ],
-                'ultimo_comunicado'   => $ultimoComunicado ? [
-                    'id'          => $ultimoComunicado->id,
-                    'titulo'      => $ultimoComunicado->titulo,
-                    'contenido'   => $ultimoComunicado->contenido,
-                    'fecha'       => $ultimoComunicado->created_at->format('d/m/Y'),
-                ] : null,
-                'alerta_sos_activa'   => $alertaActiva ? true : false,
-                'siri_shortcut_url'   => 'https://www.icloud.com/shortcuts/653d6f68abc0490a81e73c2773d36a90',
-            ]
-        ], 200);
     }
 
-    /**
-     * 2. MÓDULO MIS PAGOS Y RECIBOS
-     */
+    /** 2. DISPARAR S.O.S. */
+    public function dispararSOS(Request $request)
+    {
+        try {
+            $user = $request->user();
+            $dpto = $user->departamento;
+            $condoId = $dpto?->condominio_id ?? 1;
+
+            $alerta = AlertaSOS::create([
+                'condominio_id'   => $condoId,
+                'departamento_id' => $user->departamento_id ?? 1,
+                'user_id'         => $user->id,
+                'tipo'            => 'S.O.S. App Nativa',
+                'descripcion'     => "¡ALERTA S.O.S! El residente {$user->name} del Dpto. {$dpto?->numero} requiere asistencia inmediata.",
+                'estado'          => 'Pendiente',
+            ]);
+
+            return response()->json(['success' => true, 'message' => '¡Alerta S.O.S. enviada a Portería! La ayuda está en camino.'], 200);
+        } catch (\Throwable $e) {
+            return response()->json(['success' => false, 'message' => 'Error SOS: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /** 3. MIS PAGOS */
     public function misPagos(Request $request)
     {
         $user = $request->user();
-
         $pagos = Pago::where('departamento_id', $user->departamento_id)
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($pago) {
                 return [
-                    'id'                  => $pago->id,
-                    'concepto'            => $pago->concepto ?? ("Cuota de Mantenimiento - " . ($pago->mes ?? '') . " " . ($pago->anio ?? '')),
-                    'mes'                 => $pago->mes,
-                    'anio'                => $pago->anio,
-                    'monto_mantenimiento' => (float) ($pago->monto_mantenimiento ?? 0),
-                    'monto_luz'           => (float) ($pago->monto_luz ?? 0),
-                    'monto_agua'          => (float) ($pago->monto_agua ?? 0),
-                    'monto_total'         => (float) $pago->monto,
-                    'monto_formateado'    => 'S/ ' . number_format((float)$pago->monto, 2, '.', ''),
-                    'estado'              => $pago->estado,
-                    'fecha_vencimiento'   => '12 de cada mes',
-                    'voucher_url'         => $pago->voucher ? asset('storage/' . $pago->voucher) : null,
-                    'recibo_pdf_url'      => route('pago.pdf', $pago->id),
+                    'id'               => $pago->id,
+                    'concepto'         => $pago->concepto ?? ("Cuota de Mantenimiento - " . ($pago->mes ?? '') . " " . ($pago->anio ?? '')),
+                    'monto_total'      => (float) $pago->monto,
+                    'monto_formateado' => 'S/ ' . number_format((float)$pago->monto, 2, '.', ''),
+                    'estado'           => $pago->estado,
+                    'fecha_vencimiento' => '12 de cada mes',
                 ];
             });
 
-        return response()->json([
-            'success' => true,
-            'data'    => $pagos,
-        ], 200);
+        return response()->json(['success' => true, 'data' => $pagos], 200);
     }
 
-    /**
-     * 3. SUBIR COMPROBANTE DE PAGO (YAPE / PLIN) DESDE LA APP NATIVA
-     */
-    public function reportarPago(Request $request, $pagoId)
-    {
-        $validator = Validator::make($request->all(), [
-            'voucher' => 'required|image|mimes:jpeg,png,jpg,webp|max:5120',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Por favor adjunte una foto válida del voucher de pago.',
-                'errors'  => $validator->errors(),
-            ], 422);
-        }
-
-        $pago = Pago::where('id', $pagoId)
-            ->where('departamento_id', $request->user()->departamento_id)
-            ->first();
-
-        if (!$pago) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Recibo de pago no encontrado.',
-            ], 404);
-        }
-
-        // Guardar la foto del voucher
-        $path = $request->file('voucher')->store('vouchers', 'public');
-
-        $pago->update([
-            'voucher' => $path,
-            'estado'  => 'En Revisión',
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Comprobante de pago enviado con éxito. La administración validará su recibo.',
-            'pago'    => [
-                'id'          => $pago->id,
-                'estado'      => 'En Revisión',
-                'voucher_url' => asset('storage/' . $path),
-            ]
-        ], 200);
-    }
-
-    /**
-     * 4. BOTÓN DE PÁNICO S.O.S NATIVO (1 TOQUE / SIRI)
-     */
-    public function dispararSOS(Request $request)
+    /** 4. INVITADOS (PORTERÍA) */
+    public function invitados(Request $request)
     {
         $user = $request->user();
-        $dpto = $user->departamento;
-        $condominio = $dpto?->condominio;
+        $invitados = Visita::where('departamento_id', $user->departamento_id)->latest()->get()->map(function ($v) {
+            return [
+                'id'               => $v->id,
+                'nombre_visitante' => $v->nombre_visitante ?? 'Invitado',
+                'dni_visitante'    => $v->dni_visitante ?? 'S/D',
+                'tipo_visita'      => $v->tipo_visita ?? 'Peatonal',
+                'estado'           => $v->estado ?? 'Pre-Autorizado',
+                'fecha'            => $v->created_at->format('d/m/Y H:i'),
+            ];
+        });
 
-        if (!$dpto || !$condominio) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No se pudo identificar la portería del departamento.',
-            ], 400);
-        }
-
-        $alerta = AlertaSOS::create([
-            'condominio_id'   => $condominio->id,
-            'departamento_id' => $dpto->id,
-            'user_id'         => $user->id,
-            'tipo'            => 'S.O.S. App Nativa',
-            'descripcion'     => "¡ALERTA S.O.S! El residente {$user->name} del Dpto. {$dpto->numero} requiere asistencia inmediata en Portería.",
-            'estado'          => 'Pendiente',
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => '¡Alerta S.O.S. enviada a la Portería! La ayuda está en camino.',
-            'alerta'  => [
-                'id'         => $alerta->id,
-                'dpto'       => $dpto->numero,
-                'estado'     => 'Pendiente',
-                'created_at' => $alerta->created_at->format('H:i:s'),
-            ]
-        ], 200);
+        return response()->json(['success' => true, 'data' => $invitados], 200);
     }
 
-    /**
-     * 5. LISTA DE COMUNICADOS
-     */
+    public function registrarInvitado(Request $request)
+    {
+        try {
+            $user = $request->user();
+            $visita = Visita::create([
+                'condominio_id'    => $user->departamento?->condominio_id ?? 1,
+                'departamento_id' => $user->departamento_id ?? 1,
+                'user_id'          => $user->id,
+                'nombre_visitante' => $request->input('nombre'),
+                'dni_visitante'    => $request->input('dni', 'S/D'),
+                'tipo_visita'      => $request->input('tipo', 'Peatonal'),
+                'estado'           => 'Pre-Autorizado',
+            ]);
+
+            return response()->json(['success' => true, 'message' => 'Invitado pre-autorizado con éxito. Ya figura en Portería.'], 200);
+        } catch (\Throwable $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /** 5. COMUNICADOS */
     public function comunicados(Request $request)
     {
-        $user = $request->user();
-        $condoId = $user->departamento?->condominio_id;
+        $condoId = $request->user()->departamento?->condominio_id ?? 1;
+        $comunicados = Comunicado::where('condominio_id', $condoId)->latest()->get()->map(function ($com) {
+            return [
+                'id'        => $com->id,
+                'titulo'    => $com->titulo,
+                'contenido' => $com->contenido,
+                'fecha'     => $com->created_at->format('d/m/Y H:i'),
+            ];
+        });
 
-        $comunicados = Comunicado::where('condominio_id', $condoId)
-            ->latest()
-            ->get()
-            ->map(function ($com) {
-                return [
-                    'id'        => $com->id,
-                    'titulo'    => $com->titulo,
-                    'contenido' => $com->contenido,
-                    'fecha'     => $com->created_at->format('d/m/Y H:i'),
-                ];
-            });
-
-        return response()->json([
-            'success' => true,
-            'data'    => $comunicados,
-        ], 200);
+        return response()->json(['success' => true, 'data' => $comunicados], 200);
     }
 
-    /**
-     * 6. LISTA DE MASCOTAS
-     */
+    /** 6. MARKETPLACE VECINAL */
+    public function marketplace(Request $request)
+    {
+        $condoId = $request->user()->departamento?->condominio_id ?? 1;
+        $anuncios = Anuncio::where('condominio_id', $condoId)->where('estado', 'Activo')->latest()->get()->map(function ($a) {
+            return [
+                'id'          => $a->id,
+                'titulo'      => $a->titulo,
+                'precio'      => 'S/ ' . number_format((float)($a->precio ?? $a->monto ?? 0), 2),
+                'descripcion' => $a->descripcion,
+                'contacto'    => $a->contacto ?? $a->telefono ?? 'Contactar en Dpto',
+                'fecha'       => $a->created_at->format('d/m/Y'),
+            ];
+        });
+
+        return response()->json(['success' => true, 'data' => $anuncios], 200);
+    }
+
+    public function registrarMarketplace(Request $request)
+    {
+        try {
+            $user = $request->user();
+            $anuncio = Anuncio::create([
+                'condominio_id'   => $user->departamento?->condominio_id ?? 1,
+                'departamento_id' => $user->departamento_id ?? 1,
+                'user_id'        => $user->id,
+                'titulo'         => $request->input('titulo'),
+                'precio'         => (float) $request->input('precio', 0),
+                'descripcion'    => $request->input('descripcion'),
+                'contacto'       => $request->input('contacto', $user->telefono ?? 'WhatsApp'),
+                'estado'         => 'Activo',
+            ]);
+
+            return response()->json(['success' => true, 'message' => 'Producto publicado en el Marketplace Vecinal.'], 200);
+        } catch (\Throwable $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /** 7. VOTACIONES & ACUERDOS */
+    public function votaciones(Request $request)
+    {
+        $condoId = $request->user()->departamento?->condominio_id ?? 1;
+        $votaciones = Votacion::where('condominio_id', $condoId)->latest()->get()->map(function ($v) {
+            return [
+                'id'          => $v->id,
+                'titulo'      => $v->titulo,
+                'descripcion' => $v->descripcion,
+                'estado'      => $v->estado ?? 'Activa',
+                'fecha'       => $v->created_at->format('d/m/Y'),
+            ];
+        });
+
+        return response()->json(['success' => true, 'data' => $votaciones], 200);
+    }
+
+    /** 8. BIBLIOTECA DE DOCUMENTOS */
+    public function documentos(Request $request)
+    {
+        $condoId = $request->user()->departamento?->condominio_id ?? 1;
+        $docs = Documento::where('condominio_id', $condoId)->latest()->get()->map(function ($d) {
+            return [
+                'id'     => $d->id,
+                'titulo' => $d->titulo,
+                'tipo'   => $d->tipo ?? 'Reglamento PDF',
+                'url'    => $d->archivo ? asset('storage/' . $d->archivo) : '#',
+            ];
+        });
+
+        return response()->json(['success' => true, 'data' => $docs], 200);
+    }
+
+    /** 9. MASCOTAS */
     public function mascotas(Request $request)
     {
         $user = $request->user();
+        $mascotas = Mascota::where('departamento_id', $user->departamento_id)->get()->map(function ($m) {
+            return [
+                'id'     => $m->id,
+                'nombre' => $m->nombre,
+                'tipo'   => $m->tipo ?? 'Mascota',
+                'raza'   => $m->raza ?? 'N/A',
+            ];
+        });
 
-        $mascotas = Mascota::where('departamento_id', $user->departamento_id)
-            ->get()
-            ->map(function ($m) {
-                return [
-                    'id'     => $m->id,
-                    'nombre' => $m->nombre,
-                    'tipo'   => $m->tipo ?? 'Mascota',
-                    'raza'   => $m->raza ?? 'N/A',
-                    'foto'   => $m->foto ? asset('storage/' . $m->foto) : null,
-                ];
-            });
-
-        return response()->json([
-            'success' => true,
-            'data'    => $mascotas,
-        ], 200);
+        return response()->json(['success' => true, 'data' => $mascotas], 200);
     }
 
-    /**
-     * 7. LISTA DE RECLAMOS
-     */
+    public function registrarMascota(Request $request)
+    {
+        try {
+            $user = $request->user();
+            $mascota = Mascota::create([
+                'condominio_id'   => $user->departamento?->condominio_id ?? 1,
+                'departamento_id' => $user->departamento_id ?? 1,
+                'user_id'        => $user->id,
+                'nombre'         => $request->input('nombre'),
+                'tipo'           => $request->input('tipo', 'Mascota'),
+                'raza'           => $request->input('raza', 'Raza'),
+            ]);
+
+            return response()->json(['success' => true, 'message' => 'Mascota registrada en el padrón del edificio.'], 200);
+        } catch (\Throwable $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /** 10. RECLAMOS */
     public function reclamos(Request $request)
     {
         $user = $request->user();
+        $reclamos = Reclamo::where('departamento_id', $user->departamento_id)->latest()->get()->map(function ($r) {
+            return [
+                'id'          => $r->id,
+                'asunto'      => $r->asunto,
+                'descripcion' => $r->descripcion,
+                'estado'      => $r->estado ?? 'Pendiente',
+                'fecha'       => $r->created_at->format('d/m/Y'),
+            ];
+        });
 
-        $reclamos = Reclamo::where('departamento_id', $user->departamento_id)
-            ->latest()
-            ->get()
-            ->map(function ($r) {
-                return [
-                    'id'          => $r->id,
-                    'asunto'      => $r->asunto,
-                    'descripcion' => $r->descripcion,
-                    'estado'      => $r->estado ?? 'Pendiente',
-                    'fecha'       => $r->created_at->format('d/m/Y'),
-                ];
-            });
+        return response()->json(['success' => true, 'data' => $reclamos], 200);
+    }
 
-        return response()->json([
-            'success' => true,
-            'data'    => $reclamos,
-        ], 200);
+    public function registrarReclamo(Request $request)
+    {
+        try {
+            $user = $request->user();
+            $reclamo = Reclamo::create([
+                'condominio_id'   => $user->departamento?->condominio_id ?? 1,
+                'departamento_id' => $user->departamento_id ?? 1,
+                'user_id'        => $user->id,
+                'asunto'         => $request->input('asunto'),
+                'descripcion'    => $request->input('descripcion'),
+                'estado'         => 'Pendiente',
+            ]);
+
+            return response()->json(['success' => true, 'message' => 'Sugerencia/Reclamo enviado a la administración.'], 200);
+        } catch (\Throwable $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
     }
 }

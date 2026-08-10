@@ -4,38 +4,48 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthApiController;
 use App\Http\Controllers\Api\VecinoApiController;
 
-/*
-|--------------------------------------------------------------------------
-| RUTAS API RESTFUL - APP NATIVA LIVO VECINOS
-|--------------------------------------------------------------------------
-*/
+// PRUEBA BROWSER
+Route::get('v1/auth/login', fn () => response()->json(['success' => true, 'status' => 'ONLINE']));
 
-// RUTA DE PRUEBA EN BARRAS DE NAVEGADOR (GET)
-Route::get('v1/auth/login', function () {
-    return response()->json([
-        'success' => true,
-        'message' => 'API RESTful LIVO Vecinos v1 Operativa. Utilice el método POST para iniciar sesión.',
-        'status'  => 'ONLINE',
-    ]);
-});
-
-// 1. RUTAS PÚBLICAS (POST)
+// 1. AUTENTICACIÓN
 Route::prefix('v1/auth')->group(function () {
     Route::post('/login', [AuthApiController::class, 'login']);
 });
 
-// 2. RUTAS PROTEGIDAS CON TOKEN DE SANCTUM (VECINOS)
+// 2. MÓDULOS PROTEGIDOS DE LA APP NATIVA
 Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
-    // Autenticación
     Route::get('/auth/me', [AuthApiController::class, 'me']);
     Route::post('/auth/logout', [AuthApiController::class, 'logout']);
 
-    // Dashboard & Módulos Vecino
+    // Dashboard & SOS
     Route::get('/vecino/dashboard', [VecinoApiController::class, 'dashboard']);
-    Route::get('/vecino/pagos', [VecinoApiController::class, 'misPagos']);
-    Route::post('/vecino/pagos/{id}/reportar', [VecinoApiController::class, 'reportarPago']);
     Route::post('/vecino/sos', [VecinoApiController::class, 'dispararSOS']);
+
+    // Pagos
+    Route::get('/vecino/pagos', [VecinoApiController::class, 'misPagos']);
+
+    // Invitados
+    Route::get('/vecino/invitados', [VecinoApiController::class, 'invitados']);
+    Route::post('/vecino/invitados', [VecinoApiController::class, 'registrarInvitado']);
+
+    // Comunicados
     Route::get('/vecino/comunicados', [VecinoApiController::class, 'comunicados']);
+
+    // Marketplace
+    Route::get('/vecino/marketplace', [VecinoApiController::class, 'marketplace']);
+    Route::post('/vecino/marketplace', [VecinoApiController::class, 'registrarMarketplace']);
+
+    // Votaciones
+    Route::get('/vecino/votaciones', [VecinoApiController::class, 'votaciones']);
+
+    // Documentos
+    Route::get('/vecino/documentos', [VecinoApiController::class, 'documentos']);
+
+    // Mascotas
     Route::get('/vecino/mascotas', [VecinoApiController::class, 'mascotas']);
+    Route::post('/vecino/mascotas', [VecinoApiController::class, 'registrarMascota']);
+
+    // Reclamos
     Route::get('/vecino/reclamos', [VecinoApiController::class, 'reclamos']);
+    Route::post('/vecino/reclamos', [VecinoApiController::class, 'registrarReclamo']);
 });
