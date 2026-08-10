@@ -22,6 +22,9 @@ workflows:
           cd public/mobile_app
           flutter create --org pe.com.livo --project-name livo_app .
           flutter pub get
+      - name: Set Xcode Bundle Identifier to pe.com.livo.app
+        script: |
+          sed -i '' 's/PRODUCT_BUNDLE_IDENTIFIER = .*/PRODUCT_BUNDLE_IDENTIFIER = pe.com.livo.app;/g' public/mobile_app/ios/Runner.xcodeproj/project.pbxproj
       - name: Set up automatic code signing on Xcode project
         script: |
           xcode-project use-profiles --project "$XCODE_PROJECT"
