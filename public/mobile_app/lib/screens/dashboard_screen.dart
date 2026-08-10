@@ -59,7 +59,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          crossAxisAlignment: Alignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
               padding: const EdgeInsets.all(20),
@@ -69,7 +69,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 border: Border.all(color: Colors.white10),
               ),
               child: Column(
-                crossAxisAlignment: Alignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     '👋 ¡Bienvenido, ${widget.vecinoNombre}!',

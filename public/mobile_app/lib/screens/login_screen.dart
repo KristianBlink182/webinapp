@@ -78,7 +78,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     border: Border.all(color: Colors.white10),
                   ),
                   child: Column(
-                    crossAxisAlignment: Alignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
                         'Iniciar Sesión',
