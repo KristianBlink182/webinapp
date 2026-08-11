@@ -13,7 +13,6 @@ use App\Models\Anuncio;
 use App\Models\Votacion;
 use App\Models\Documento;
 use App\Models\AreaComun;
-use App\Models\Reserva;
 use Illuminate\Http\Request;
 
 class VecinoApiController extends Controller
@@ -23,22 +22,24 @@ class VecinoApiController extends Controller
     {
         try {
             $user = $request->user();
-            $dpto = $user->departamento;
+            $dpto = $user->departamento ?? \App\Models\Departamento::find($user->departamento_id);
             $condominio = $dpto?->condominio;
+            $dptoId = $dpto?->id ?? $user->departamento_id;
 
-            $saldoPendiente = Pago::where('departamento_id', $dpto?->id)
+            $saldoPendiente = Pago::where('departamento_id', $dptoId)
                 ->whereIn('estado', ['Pendiente', 'pendiente'])
                 ->sum('monto') ?? 0;
 
             $ultimoComunicado = Comunicado::where('condominio_id', $condominio?->id)->latest()->first();
-            $alertaActiva = AlertaSOS::where('departamento_id', $dpto?->id)->where('estado', 'Pendiente')->first();
+            $alertaActiva = AlertaSOS::where('departamento_id', $dptoId)->where('estado', 'Pendiente')->first();
 
             return response()->json([
                 'success' => true,
                 'data'    => [
                     'vecino_nombre'       => $user->name,
                     'departamento_numero' => $dpto?->numero ?? '100',
-                    'condominio_nombre'   => $condominio?->nombre ?? 'Edificio LIVO',
+                    'condominio_nombre'   => $condominio?->nombre ?? 'Jorge Chavez',
+                    'url_camara'          => $condominio?->url_camara_principal ?? 'https://www.youtube.com/embed/live_stream',
                     'estado_cuenta'       => [
                         'monto_pendiente'  => (float) $saldoPendiente,
                         'monto_formateado' => 'S/ ' . number_format((float)$saldoPendiente, 2, '.', ''),
@@ -58,7 +59,30 @@ class VecinoApiController extends Controller
         }
     }
 
-    /** 2. DISPARAR S.O.S. */
+    /** 2. MIS PAGOS Y RECIBOS */
+    public function misPagos(Request $request)
+    {
+        $user = $request->user();
+        $dptoId = $user->departamento_id ?? $user->departamento?->id;
+
+        $pagos = Pago::where('departamento_id', $dptoId)
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($pago) {
+                return [
+                    'id'               => $pago->id,
+                    'concepto'         => $pago->concepto ?? ("Cuota de Mantenimiento - " . ($pago->mes ?? '') . " " . ($pago->anio ?? '')),
+                    'monto_total'      => (float) $pago->monto,
+                    'monto_formateado' => 'S/ ' . number_format((float)$pago->monto, 2, '.', ''),
+                    'estado'           => $pago->estado,
+                    'fecha_vencimiento' => '12 de cada mes',
+                ];
+            });
+
+        return response()->json(['success' => true, 'data' => $pagos], 200);
+    }
+
+    /** 3. DISPARAR S.O.S. */
     public function dispararSOS(Request $request)
     {
         try {
@@ -81,28 +105,7 @@ class VecinoApiController extends Controller
         }
     }
 
-    /** 3. MIS PAGOS */
-    public function misPagos(Request $request)
-    {
-        $user = $request->user();
-        $pagos = Pago::where('departamento_id', $user->departamento_id)
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(function ($pago) {
-                return [
-                    'id'               => $pago->id,
-                    'concepto'         => $pago->concepto ?? ("Cuota de Mantenimiento - " . ($pago->mes ?? '') . " " . ($pago->anio ?? '')),
-                    'monto_total'      => (float) $pago->monto,
-                    'monto_formateado' => 'S/ ' . number_format((float)$pago->monto, 2, '.', ''),
-                    'estado'           => $pago->estado,
-                    'fecha_vencimiento' => '12 de cada mes',
-                ];
-            });
-
-        return response()->json(['success' => true, 'data' => $pagos], 200);
-    }
-
-    /** 4. INVITADOS (PORTERÍA) */
+    /** 4. INVITADOS */
     public function invitados(Request $request)
     {
         $user = $request->user();
@@ -140,7 +143,42 @@ class VecinoApiController extends Controller
         }
     }
 
-    /** 5. COMUNICADOS */
+    /** 5. ÁREAS COMUNES */
+    public function areasComunes(Request $request)
+    {
+        $user = $request->user();
+        $condoId = $user->departamento?->condominio_id ?? 1;
+
+        $areas = AreaComun::where('condominio_id', $condoId)->get()->map(function ($a) {
+            return [
+                'id'          => $a->id,
+                'nombre'      => $a->nombre ?? 'Área Común',
+                'descripcion' => $a->descripcion ?? 'Parrillas, SUM, Gimnasio',
+                'capacidad'   => $a->capacidad ?? '10 personas',
+                'costo'       => 'S/ ' . number_format((float)($a->costo_reserva ?? 0), 2),
+                'estado'      => $a->estado ?? 'Disponible',
+            ];
+        });
+
+        return response()->json(['success' => true, 'data' => $areas], 200);
+    }
+
+    /** 6. CÁMARA DE SEGURIDAD EN VIVO */
+    public function camara(Request $request)
+    {
+        $user = $request->user();
+        $condo = $user->departamento?->condominio;
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'nombre'     => '🔴 EN VIVO — Puerta Principal',
+                'stream_url' => $condo?->url_camara_principal ?? 'https://www.youtube.com/embed/live_stream',
+            ]
+        ], 200);
+    }
+
+    /** 7. COMUNICADOS */
     public function comunicados(Request $request)
     {
         $condoId = $request->user()->departamento?->condominio_id ?? 1;
@@ -156,18 +194,17 @@ class VecinoApiController extends Controller
         return response()->json(['success' => true, 'data' => $comunicados], 200);
     }
 
-    /** 6. MARKETPLACE VECINAL */
+    /** 8. MARKETPLACE */
     public function marketplace(Request $request)
     {
         $condoId = $request->user()->departamento?->condominio_id ?? 1;
-        $anuncios = Anuncio::where('condominio_id', $condoId)->where('estado', 'Activo')->latest()->get()->map(function ($a) {
+        $anuncios = Anuncio::where('condominio_id', $condoId)->latest()->get()->map(function ($a) {
             return [
                 'id'          => $a->id,
                 'titulo'      => $a->titulo,
                 'precio'      => 'S/ ' . number_format((float)($a->precio ?? $a->monto ?? 0), 2),
                 'descripcion' => $a->descripcion,
-                'contacto'    => $a->contacto ?? $a->telefono ?? 'Contactar en Dpto',
-                'fecha'       => $a->created_at->format('d/m/Y'),
+                'contacto'    => $a->contacto ?? $a->telefono ?? 'WhatsApp',
             ];
         });
 
@@ -195,7 +232,7 @@ class VecinoApiController extends Controller
         }
     }
 
-    /** 7. VOTACIONES & ACUERDOS */
+    /** 9. VOTACIONES */
     public function votaciones(Request $request)
     {
         $condoId = $request->user()->departamento?->condominio_id ?? 1;
@@ -205,14 +242,13 @@ class VecinoApiController extends Controller
                 'titulo'      => $v->titulo,
                 'descripcion' => $v->descripcion,
                 'estado'      => $v->estado ?? 'Activa',
-                'fecha'       => $v->created_at->format('d/m/Y'),
             ];
         });
 
         return response()->json(['success' => true, 'data' => $votaciones], 200);
     }
 
-    /** 8. BIBLIOTECA DE DOCUMENTOS */
+    /** 10. DOCUMENTOS */
     public function documentos(Request $request)
     {
         $condoId = $request->user()->departamento?->condominio_id ?? 1;
@@ -228,7 +264,7 @@ class VecinoApiController extends Controller
         return response()->json(['success' => true, 'data' => $docs], 200);
     }
 
-    /** 9. MASCOTAS */
+    /** 11. MASCOTAS */
     public function mascotas(Request $request)
     {
         $user = $request->user();
@@ -257,13 +293,13 @@ class VecinoApiController extends Controller
                 'raza'           => $request->input('raza', 'Raza'),
             ]);
 
-            return response()->json(['success' => true, 'message' => 'Mascota registrada en el padrón del edificio.'], 200);
+            return response()->json(['success' => true, 'message' => 'Mascota registrada en el padrón.'], 200);
         } catch (\Throwable $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
-    /** 10. RECLAMOS */
+    /** 12. RECLAMOS */
     public function reclamos(Request $request)
     {
         $user = $request->user();
@@ -273,7 +309,6 @@ class VecinoApiController extends Controller
                 'asunto'      => $r->asunto,
                 'descripcion' => $r->descripcion,
                 'estado'      => $r->estado ?? 'Pendiente',
-                'fecha'       => $r->created_at->format('d/m/Y'),
             ];
         });
 
@@ -293,7 +328,7 @@ class VecinoApiController extends Controller
                 'estado'         => 'Pendiente',
             ]);
 
-            return response()->json(['success' => true, 'message' => 'Sugerencia/Reclamo enviado a la administración.'], 200);
+            return response()->json(['success' => true, 'message' => 'Sugerencia enviada a la administración.'], 200);
         } catch (\Throwable $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }

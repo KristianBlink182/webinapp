@@ -9,9 +9,7 @@ class InvitadosListScreen extends StatefulWidget {
 }
 
 class _InvitadosListScreenState extends State<InvitadosListScreen> {
-  List<dynamic> _items = [];
-  bool _isLoading = true;
-
+  List<dynamic> _items = []; bool _isLoading = true;
   @override void initState() { super.initState(); _cargar(); }
 
   void _cargar() async {
@@ -31,13 +29,9 @@ class _InvitadosListScreenState extends State<InvitadosListScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Nombre del visitante', style: TextStyle(color: Colors.white70, fontSize: 12)),
-            const SizedBox(height: 4),
-            TextField(controller: _nCtrl, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(filled: true, fillColor: Color(0xFF1E293B), hintText: 'Ej: Juan Pérez', hintStyle: TextStyle(color: Colors.white30))),
-            const SizedBox(height: 12),
-            const Text('DNI / Documento', style: TextStyle(color: Colors.white70, fontSize: 12)),
-            const SizedBox(height: 4),
-            TextField(controller: _dCtrl, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(filled: true, fillColor: Color(0xFF1E293B), hintText: 'Ej: 78945612', hintStyle: TextStyle(color: Colors.white30))),
+            TextField(controller: _nCtrl, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(hintText: 'Nombre del visitante', hintStyle: TextStyle(color: Colors.white30))),
+            const SizedBox(height: 8),
+            TextField(controller: _dCtrl, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(hintText: 'DNI / Documento', hintStyle: TextStyle(color: Colors.white30))),
           ],
         ),
         actions: [
@@ -113,9 +107,7 @@ class MarketplaceListScreen extends StatefulWidget {
 }
 
 class _MarketplaceListScreenState extends State<MarketplaceListScreen> {
-  List<dynamic> _items = [];
-  bool _isLoading = true;
-
+  List<dynamic> _items = []; bool _isLoading = true;
   @override void initState() { super.initState(); _cargar(); }
 
   void _cargar() async {
@@ -207,7 +199,7 @@ class _MarketplaceListScreenState extends State<MarketplaceListScreen> {
   }
 }
 
-// 3. VOTACIONES & ACUERDOS
+// 3. VOTACIONES
 class VotacionesListScreen extends StatefulWidget {
   final String token;
   const VotacionesListScreen({Key? key, required this.token}) : super(key: key);
@@ -256,7 +248,7 @@ class _VotacionesListScreenState extends State<VotacionesListScreen> {
   }
 }
 
-// 4. BIBLIOTECA DE DOCUMENTOS
+// 4. DOCUMENTOS
 class DocumentosListScreen extends StatefulWidget {
   final String token;
   const DocumentosListScreen({Key? key, required this.token}) : super(key: key);

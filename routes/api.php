@@ -4,15 +4,15 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthApiController;
 use App\Http\Controllers\Api\VecinoApiController;
 
-// PRUEBA BROWSER
+// RUTA PRUEBA BROWSER
 Route::get('v1/auth/login', fn () => response()->json(['success' => true, 'status' => 'ONLINE']));
 
-// 1. AUTENTICACIÓN
+// 1. RUTAS PÚBLICAS
 Route::prefix('v1/auth')->group(function () {
     Route::post('/login', [AuthApiController::class, 'login']);
 });
 
-// 2. MÓDULOS PROTEGIDOS DE LA APP NATIVA
+// 2. RUTAS PROTEGIDAS CON TOKEN
 Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
     Route::get('/auth/me', [AuthApiController::class, 'me']);
     Route::post('/auth/logout', [AuthApiController::class, 'logout']);
@@ -28,17 +28,15 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
     Route::get('/vecino/invitados', [VecinoApiController::class, 'invitados']);
     Route::post('/vecino/invitados', [VecinoApiController::class, 'registrarInvitado']);
 
-    // Comunicados
-    Route::get('/vecino/comunicados', [VecinoApiController::class, 'comunicados']);
+    // Áreas Comunes & Cámara
+    Route::get('/vecino/areas-comunes', [VecinoApiController::class, 'areasComunes']);
+    Route::get('/vecino/camara', [VecinoApiController::class, 'camara']);
 
-    // Marketplace
+    // Comunicados, Marketplace, Votaciones, Documentos
+    Route::get('/vecino/comunicados', [VecinoApiController::class, 'comunicados']);
     Route::get('/vecino/marketplace', [VecinoApiController::class, 'marketplace']);
     Route::post('/vecino/marketplace', [VecinoApiController::class, 'registrarMarketplace']);
-
-    // Votaciones
     Route::get('/vecino/votaciones', [VecinoApiController::class, 'votaciones']);
-
-    // Documentos
     Route::get('/vecino/documentos', [VecinoApiController::class, 'documentos']);
 
     // Mascotas
