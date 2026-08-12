@@ -141,7 +141,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Tarjeta Bienvenida
+          // 1. Tarjeta Bienvenida + Atajo Siri
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -180,8 +180,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           const SizedBox(height: 16),
 
-          // 2. Tarjeta Estado de Cuenta
+          // 2. Tarjeta Estado de Cuenta (Ancho Completo)
           Container(
+            width: double.infinity,
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               gradient: const LinearGradient(colors: [Color(0xFF7C3AED), Color(0xFF4C1D95)]),
@@ -200,28 +201,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           const SizedBox(height: 16),
 
-          // 3. Tarjeta Último Comunicado
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: const Color(0xFF064E3B).withOpacity(0.5),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFF10B981).withOpacity(0.3)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text('ÚLTIMO COMUNICADO', style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold)),
-                SizedBox(height: 6),
-                Text('Sin comunicados', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                SizedBox(height: 4),
-                Text('No hay novedades por el momento.', style: TextStyle(color: Colors.white60, fontSize: 13)),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // 4. Botón SOS de Pánico
+          // 3. Botón SOS de Pánico
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -255,7 +235,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           const SizedBox(height: 20),
 
-          // 5. Servicios del Condominio (Grid de 4 Tarjetas Nativas)
+          // 4. Servicios del Condominio (Grid de 4 Tarjetas Nativas)
           const Text('SERVICIOS DEL CONDOMINIO', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1)),
           const SizedBox(height: 12),
 

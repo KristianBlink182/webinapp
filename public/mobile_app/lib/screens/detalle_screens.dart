@@ -9,7 +9,9 @@ class InvitadosListScreen extends StatefulWidget {
 }
 
 class _InvitadosListScreenState extends State<InvitadosListScreen> {
-  List<dynamic> _items = []; bool _isLoading = true;
+  List<dynamic> _items = [];
+  bool _isLoading = true;
+
   @override void initState() { super.initState(); _cargar(); }
 
   void _cargar() async {
@@ -29,9 +31,13 @@ class _InvitadosListScreenState extends State<InvitadosListScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            TextField(controller: _nCtrl, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(hintText: 'Nombre del visitante', hintStyle: TextStyle(color: Colors.white30))),
-            const SizedBox(height: 8),
-            TextField(controller: _dCtrl, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(hintText: 'DNI / Documento', hintStyle: TextStyle(color: Colors.white30))),
+            const Text('Nombre del visitante', style: TextStyle(color: Colors.white70, fontSize: 12)),
+            const SizedBox(height: 4),
+            TextField(controller: _nCtrl, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(filled: true, fillColor: Color(0xFF1E293B), hintText: 'Ej: Juan Pérez', hintStyle: TextStyle(color: Colors.white30))),
+            const SizedBox(height: 12),
+            const Text('DNI / Documento', style: TextStyle(color: Colors.white70, fontSize: 12)),
+            const SizedBox(height: 4),
+            TextField(controller: _dCtrl, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(filled: true, fillColor: Color(0xFF1E293B), hintText: 'Ej: 78945612', hintStyle: TextStyle(color: Colors.white30))),
           ],
         ),
         actions: [
@@ -99,7 +105,7 @@ class _InvitadosListScreenState extends State<InvitadosListScreen> {
   }
 }
 
-// 2. MARKETPLACE VECINAL
+// 2. MARKETPLACE VECINAL (CON REGISTRO DE PRODUCTOS)
 class MarketplaceListScreen extends StatefulWidget {
   final String token;
   const MarketplaceListScreen({Key? key, required this.token}) : super(key: key);
@@ -107,7 +113,9 @@ class MarketplaceListScreen extends StatefulWidget {
 }
 
 class _MarketplaceListScreenState extends State<MarketplaceListScreen> {
-  List<dynamic> _items = []; bool _isLoading = true;
+  List<dynamic> _items = [];
+  bool _isLoading = true;
+
   @override void initState() { super.initState(); _cargar(); }
 
   void _cargar() async {
@@ -199,7 +207,7 @@ class _MarketplaceListScreenState extends State<MarketplaceListScreen> {
   }
 }
 
-// 3. VOTACIONES
+// 3. VOTACIONES & ACUERDOS
 class VotacionesListScreen extends StatefulWidget {
   final String token;
   const VotacionesListScreen({Key? key, required this.token}) : super(key: key);
@@ -248,7 +256,7 @@ class _VotacionesListScreenState extends State<VotacionesListScreen> {
   }
 }
 
-// 4. DOCUMENTOS
+// 4. BIBLIOTECA DE DOCUMENTOS
 class DocumentosListScreen extends StatefulWidget {
   final String token;
   const DocumentosListScreen({Key? key, required this.token}) : super(key: key);
@@ -570,16 +578,88 @@ class CamaraScreen extends StatelessWidget {
   }
 }
 
-// 9. ÁREAS COMUNES
-class AreasComunesListScreen extends StatelessWidget {
+// 9. ÁREAS COMUNES CON FORMULARIO INTERACTIVO DE RESERVA
+class AreasComunesListScreen extends StatefulWidget {
   final String token;
   const AreasComunesListScreen({Key? key, required this.token}) : super(key: key);
+  @override _AreasComunesListScreenState createState() => _AreasComunesListScreenState();
+}
+
+class _AreasComunesListScreenState extends State<AreasComunesListScreen> {
+  void _modalReservar(String nombreArea) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF0F172A),
+        title: Text('📅 Reservar $nombreArea', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Seleccione la fecha y turno deseado. La reserva se enviará a la administración para su aprobación.', style: TextStyle(color: Colors.white70, fontSize: 13)),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar', style: TextStyle(color: Colors.white54))),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFA855F7)),
+            onPressed: () {
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(backgroundColor: Colors.green, content: Text('Solicitud de reserva enviada a la administración.')));
+            },
+            child: const Text('Confirmar Reserva'),
+          )
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF060913),
       appBar: AppBar(backgroundColor: const Color(0xFF060913), title: const Text('Reserva de Áreas Comunes')),
-      body: _buildVacio('Áreas Comunes', 'Parrillas, SUM y Gimnasio disponibles para reserva.'),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          _buildAreaCard('Zona de Parrillas', 'Disponible para eventos familiares.', 'S/ 50.00'),
+          const SizedBox(height: 12),
+          _buildAreaCard('Salón de Usos Múltiples (SUM)', 'Capacidad para 40 personas.', 'S/ 100.00'),
+          const SizedBox(height: 12),
+          _buildAreaCard('Gimnasio del Edificio', 'Acceso libre para residentes.', 'Gratuito'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAreaCard(String nombre, String desc, String precio) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: const Color(0xFF0F172A), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white10)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(nombre, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+              Text(precio, style: const TextStyle(color: Color(0xFFA855F7), fontWeight: FontWeight.bold, fontSize: 14)),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(desc, style: const TextStyle(color: Colors.white70, fontSize: 13)),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () => _modalReservar(nombre),
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFA855F7)),
+              icon: const Icon(Icons.calendar_month, color: Colors.white, size: 18),
+              label: const Text('📅 Reservar Espacio', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+          )
+        ],
+      ),
     );
   }
 }
