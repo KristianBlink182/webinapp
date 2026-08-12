@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../api_service.dart';
 
 // 1. INVITADOS (PORTERÍA)
@@ -9,9 +10,7 @@ class InvitadosListScreen extends StatefulWidget {
 }
 
 class _InvitadosListScreenState extends State<InvitadosListScreen> {
-  List<dynamic> _items = [];
-  bool _isLoading = true;
-
+  List<dynamic> _items = []; bool _isLoading = true;
   @override void initState() { super.initState(); _cargar(); }
 
   void _cargar() async {
@@ -105,7 +104,7 @@ class _InvitadosListScreenState extends State<InvitadosListScreen> {
   }
 }
 
-// 2. MARKETPLACE VECINAL (CON REGISTRO DE PRODUCTOS)
+// 2. MARKETPLACE VECINAL (CON WHATSAPP DE CONTACTO DIRECTO)
 class MarketplaceListScreen extends StatefulWidget {
   final String token;
   const MarketplaceListScreen({Key? key, required this.token}) : super(key: key);
@@ -113,8 +112,7 @@ class MarketplaceListScreen extends StatefulWidget {
 }
 
 class _MarketplaceListScreenState extends State<MarketplaceListScreen> {
-  List<dynamic> _items = [];
-  bool _isLoading = true;
+  List<dynamic> _items = []; bool _isLoading = true;
 
   @override void initState() { super.initState(); _cargar(); }
 
@@ -122,6 +120,17 @@ class _MarketplaceListScreenState extends State<MarketplaceListScreen> {
     final res = await ApiService.getMarketplace(widget.token);
     if (res['success'] == true) setState(() { _items = res['data'] ?? []; _isLoading = false; });
     else setState(() => _isLoading = false);
+  }
+
+  void _abrirWhatsApp(String telefono, String tituloProducto) async {
+    final cleanPhone = telefono.replaceAll(RegExp(r'[^\d]'), '');
+    final phone = cleanPhone.startsWith('51') ? cleanPhone : '51$cleanPhone';
+    final mensaje = Uri.encodeComponent('¡Hola! Vi tu publicación "$tituloProducto" en el Marketplace de LIVO Vecinos.');
+    final Uri url = Uri.parse('https://wa.me/$phone?text=$mensaje');
+
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    }
   }
 
   void _modalPublicar() {
@@ -190,8 +199,16 @@ class _MarketplaceListScreenState extends State<MarketplaceListScreen> {
                           ),
                           const SizedBox(height: 6),
                           Text(item['descripcion'] ?? '', style: const TextStyle(color: Colors.white70, fontSize: 13)),
-                          const SizedBox(height: 8),
-                          Text('Contacto: ${item['contacto']}', style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 12, fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: () => _abrirWhatsApp(item['contacto'] ?? '987654321', item['titulo'] ?? 'Producto'),
+                              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF25D366)),
+                              icon: const Icon(Icons.chat, color: Colors.white, size: 18),
+                              label: const Text('💬 Contactar por WhatsApp', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                            ),
+                          ),
                         ],
                       ),
                     );
@@ -546,7 +563,7 @@ class _ReclamosListScreenState extends State<ReclamosListScreen> {
   }
 }
 
-// 8. CÁMARA
+// 8. CÁMARA EN VIVO
 class CamaraScreen extends StatelessWidget {
   final String token;
   const CamaraScreen({Key? key, required this.token}) : super(key: key);
@@ -578,7 +595,7 @@ class CamaraScreen extends StatelessWidget {
   }
 }
 
-// 9. ÁREAS COMUNES CON FORMULARIO INTERACTIVO DE RESERVA
+// 9. ÁREAS COMUNES (CON SUBIDA DE VOUCHER)
 class AreasComunesListScreen extends StatefulWidget {
   final String token;
   const AreasComunesListScreen({Key? key, required this.token}) : super(key: key);
@@ -592,11 +609,17 @@ class _AreasComunesListScreenState extends State<AreasComunesListScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF0F172A),
         title: Text('📅 Reservar $nombreArea', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-        content: const Column(
+        content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Seleccione la fecha y turno deseado. La reserva se enviará a la administración para su aprobación.', style: TextStyle(color: Colors.white70, fontSize: 13)),
+            const Text('Seleccione la fecha y turno deseado:', style: TextStyle(color: Colors.white70, fontSize: 13)),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () {},
+              icon: const Icon(Icons.camera_alt, color: Color(0xFFA855F7)),
+              label: const Text('📸 Adjuntar Comprobante de Pago', style: TextStyle(color: Color(0xFFA855F7))),
+            ),
           ],
         ),
         actions: [
