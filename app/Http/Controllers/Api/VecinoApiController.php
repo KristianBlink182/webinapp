@@ -17,7 +17,7 @@ use Illuminate\Http\Request;
 
 class VecinoApiController extends Controller
 {
-    /** 1. DASHBOARD PRINCIPAL */
+    /** 1. DASHBOARD PRINCIPAL - SINCRONIZADO EN TIEMPO REAL CON LA WEB */
     public function dashboard(Request $request)
     {
         try {
@@ -26,7 +26,10 @@ class VecinoApiController extends Controller
             $condominio = $dpto?->condominio;
             $dptoId = $dpto?->id ?? $user->departamento_id;
 
-            $saldoPendiente = Pago::where('departamento_id', $dptoId)
+            $saldoPendiente = Pago::where(function ($q) use ($user, $dptoId) {
+                    if ($dptoId) { $q->where('departamento_id', $dptoId); }
+                    $q->orWhere('user_id', $user->id);
+                })
                 ->whereIn('estado', ['Pendiente', 'pendiente'])
                 ->sum('monto') ?? 0;
 
@@ -59,47 +62,59 @@ class VecinoApiController extends Controller
         }
     }
 
-    /** 2. MIS PAGOS Y RECIBOS */
+    /** 2. MIS PAGOS Y RECIBOS - JALA TODOS LOS RECIBOS DE ENERO, FEBRERO Y MESES EMITIDOS */
     public function misPagos(Request $request)
     {
-        $user = $request->user();
-        $dptoId = $user->departamento_id ?? $user->departamento?->id;
+        try {
+            $user = $request->user();
+            $dpto = $user->departamento ?? \App\Models\Departamento::find($user->departamento_id);
+            $dptoId = $dpto?->id ?? $user->departamento_id;
 
-        $pagos = Pago::where('departamento_id', $dptoId)
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(function ($pago) {
-                return [
-                    'id'               => $pago->id,
-                    'concepto'         => $pago->concepto ?? ("Cuota de Mantenimiento - " . ($pago->mes ?? '') . " " . ($pago->anio ?? '')),
-                    'monto_total'      => (float) $pago->monto,
-                    'monto_formateado' => 'S/ ' . number_format((float)$pago->monto, 2, '.', ''),
-                    'estado'           => $pago->estado,
-                    'fecha_vencimiento' => '12 de cada mes',
-                ];
-            });
+            $pagos = Pago::where(function ($q) use ($user, $dptoId) {
+                    if ($dptoId) { $q->where('departamento_id', $dptoId); }
+                    $q->orWhere('user_id', $user->id);
+                })
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function ($pago) {
+                    return [
+                        'id'               => $pago->id,
+                        'concepto'         => $pago->concepto ?? ("Cuota de Mantenimiento - " . ($pago->mes ?? '') . " " . ($pago->anio ?? '')),
+                        'monto_total'      => (float) $pago->monto,
+                        'monto_formateado' => 'S/ ' . number_format((float)$pago->monto, 2, '.', ''),
+                        'estado'           => $pago->estado ?? 'Pendiente',
+                        'fecha_vencimiento' => '12 de cada mes',
+                    ];
+                });
 
-        return response()->json(['success' => true, 'data' => $pagos], 200);
+            return response()->json(['success' => true, 'data' => $pagos], 200);
+        } catch (\Throwable $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
     }
 
-    /** 3. DISPARAR S.O.S. */
+    /** 3. DISPARAR S.O.S. (ENVÍA ALERTA ROJA EN TIEMPO REAL A PORTERÍA) */
     public function dispararSOS(Request $request)
     {
         try {
             $user = $request->user();
-            $dpto = $user->departamento;
+            $dpto = $user->departamento ?? \App\Models\Departamento::find($user->departamento_id);
             $condoId = $dpto?->condominio_id ?? 1;
 
             $alerta = AlertaSOS::create([
                 'condominio_id'   => $condoId,
-                'departamento_id' => $user->departamento_id ?? 1,
+                'departamento_id' => $dpto?->id ?? $user->departamento_id ?? 1,
                 'user_id'         => $user->id,
                 'tipo'            => 'S.O.S. App Nativa',
                 'descripcion'     => "¡ALERTA S.O.S! El residente {$user->name} del Dpto. {$dpto?->numero} requiere asistencia inmediata.",
                 'estado'          => 'Pendiente',
             ]);
 
-            return response()->json(['success' => true, 'message' => '¡Alerta S.O.S. enviada a Portería! La ayuda está en camino.'], 200);
+            return response()->json([
+                'success' => true,
+                'message' => '¡Alerta S.O.S. enviada a Portería! La ayuda está en camino.',
+                'alerta'  => $alerta,
+            ], 200);
         } catch (\Throwable $e) {
             return response()->json(['success' => false, 'message' => 'Error SOS: ' . $e->getMessage()], 500);
         }
@@ -163,7 +178,7 @@ class VecinoApiController extends Controller
         return response()->json(['success' => true, 'data' => $areas], 200);
     }
 
-    /** 6. CÁMARA DE SEGURIDAD EN VIVO */
+    /** 6. CÁMARA EN VIVO */
     public function camara(Request $request)
     {
         $user = $request->user();
