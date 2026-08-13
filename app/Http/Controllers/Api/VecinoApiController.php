@@ -62,36 +62,49 @@ class VecinoApiController extends Controller
         }
     }
 
-    /** 2. MIS PAGOS Y RECIBOS - JALA TODOS LOS RECIBOS DE ENERO, FEBRERO Y MESES EMITIDOS */
-    public function misPagos(Request $request)
-    {
-        try {
-            $user = $request->user();
-            $dpto = $user->departamento ?? \App\Models\Departamento::find($user->departamento_id);
-            $dptoId = $dpto?->id ?? $user->departamento_id;
+   /**
+ * 2. MIS PAGOS Y RECIBOS - ESTRUCTURA IDÉNTICA A LA WEB
+ */
+public function misPagos(Request $request)
+{
+    try {
+        $user = $request->user();
+        $dpto = $user->departamento ?? \App\Models\Departamento::find($user->departamento_id);
+        $dptoId = $dpto?->id ?? $user->departamento_id;
 
-            $pagos = Pago::where(function ($q) use ($user, $dptoId) {
-                    if ($dptoId) { $q->where('departamento_id', $dptoId); }
-                    $q->orWhere('user_id', $user->id);
-                })
-                ->orderBy('created_at', 'desc')
-                ->get()
-                ->map(function ($pago) {
-                    return [
-                        'id'               => $pago->id,
-                        'concepto'         => $pago->concepto ?? ("Cuota de Mantenimiento - " . ($pago->mes ?? '') . " " . ($pago->anio ?? '')),
-                        'monto_total'      => (float) $pago->monto,
-                        'monto_formateado' => 'S/ ' . number_format((float)$pago->monto, 2, '.', ''),
-                        'estado'           => $pago->estado ?? 'Pendiente',
-                        'fecha_vencimiento' => '12 de cada mes',
-                    ];
-                });
+        $pagos = Pago::where(function ($q) use ($user, $dptoId) {
+                if ($dptoId) { $q->where('departamento_id', $dptoId); }
+                $q->orWhere('user_id', $user->id);
+            })
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($pago) {
+                $mes = $pago->mes ?? 'Febrero';
+                $anio = $pago->anio ?? date('Y');
+                $conceptoFormat = !empty($pago->concepto) ? $pago->concepto : ("Cuota de Mantenimiento - " . $mes . " " . $anio);
 
-            return response()->json(['success' => true, 'data' => $pagos], 200);
-        } catch (\Throwable $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
-        }
+                return [
+                    'id'               => $pago->id,
+                    'concepto'         => $conceptoFormat,
+                    'mes'              => $mes,
+                    'anio'             => $anio,
+                    'monto_mantenimiento' => (float) ($pago->monto_mantenimiento ?? 0),
+                    'monto_luz'           => (float) ($pago->monto_luz ?? 0),
+                    'monto_agua'          => (float) ($pago->monto_agua ?? 0),
+                    'monto_total'      => (float) $pago->monto,
+                    'monto_formateado' => 'S/ ' . number_format((float)$pago->monto, 2, '.', ''),
+                    'estado'           => $pago->estado ?? 'Pendiente',
+                    'fecha_vencimiento' => '12 de cada mes',
+                    'voucher_url'      => $pago->voucher ? asset('storage/' . $pago->voucher) : null,
+                    'recibo_pdf_url'   => route('pago.pdf', $pago->id),
+                ];
+            });
+
+        return response()->json(['success' => true, 'data' => $pagos], 200);
+    } catch (\Throwable $e) {
+        return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
     }
+}
 
     /**
  * 3. DISPARAR S.O.S. (LÓGICA IDÉNTICA A LA WEB - ALERTA REAL A PORTERÍA Y ADMIN)

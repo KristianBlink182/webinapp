@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../api_service.dart';
 
 class PagosScreen extends StatefulWidget {
@@ -32,6 +33,54 @@ class _PagosScreenState extends State<PagosScreen> {
     }
   }
 
+  void _abrirPdf(String url) async {
+    final Uri pdfUri = Uri.parse(url);
+    if (await canLaunchUrl(pdfUri)) {
+      await launchUrl(pdfUri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  void _modalPagar(dynamic pago) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF0F172A),
+        title: const Text('💳 Reportar Comprobante de Pago', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Concepto:', style: TextStyle(color: Colors.white70, fontSize: 12)),
+            Text(pago['concepto'] ?? '', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+            const SizedBox(height: 12),
+            const Text('Monto Total:', style: TextStyle(color: Colors.white70, fontSize: 12)),
+            Text(pago['monto_formateado'] ?? '', style: const TextStyle(color: Color(0xFF38BDF8), fontWeight: FontWeight.bold, fontSize: 18)),
+            const SizedBox(height: 16),
+            OutlinedButton.icon(
+              onPressed: () {},
+              icon: const Icon(Icons.camera_alt, color: Color(0xFF10B981)),
+              label: const Text('📸 Adjuntar Voucher Yape/Plin', style: TextStyle(color: Color(0xFF10B981))),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar', style: TextStyle(color: Colors.white54))),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981)),
+            onPressed: () {
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(backgroundColor: Colors.green, content: Text('Comprobante enviado a la administración para su validación.')),
+              );
+              _cargarPagos();
+            },
+            child: const Text('🚀 Enviar Pago', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          )
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -45,18 +94,16 @@ class _PagosScreenState extends State<PagosScreen> {
           ? const Center(child: CircularProgressIndicator(color: Color(0xFF0284C7)))
           : _pagos.isEmpty
               ? _buildListaVacia()
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16.0),
-                  itemCount: _pagos.length,
-                  itemBuilder: (context, index) {
-                    final item = _pagos[index];
-                    return _buildReciboCard(
-                      concepto: item['concepto'] ?? 'Cuota de Mantenimiento',
-                      monto: item['monto_formateado'] ?? 'S/ 0.00',
-                      vencimiento: item['fecha_vencimiento'] ?? '12 de cada mes',
-                      estado: item['estado'] ?? 'Pendiente',
-                    );
-                  },
+              : RefreshIndicator(
+                  onRefresh: () async => _cargarPagos(),
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(16.0),
+                    itemCount: _pagos.length,
+                    itemBuilder: (context, index) {
+                      final item = _pagos[index];
+                      return _buildReciboCard(item);
+                    },
+                  ),
                 ),
     );
   }
@@ -76,14 +123,10 @@ class _PagosScreenState extends State<PagosScreen> {
     );
   }
 
-  Widget _buildReciboCard({
-    required String concepto,
-    required String monto,
-    required String vencimiento,
-    required String estado,
-  }) {
-    final isPagado = estado.toLowerCase() == 'pagado';
-    final isRevision = estado.toLowerCase().contains('revis');
+  Widget _buildReciboCard(dynamic item) {
+    final estado = (item['estado'] ?? 'Pendiente').toString().toLowerCase();
+    final isPagado = estado == 'pagado' || estado == 'aprobado';
+    final isRevision = estado.contains('revis') || estado.contains('proces');
 
     Color colorEstado = Colors.red;
     String textoEstado = 'Pendiente';
@@ -111,7 +154,10 @@ class _PagosScreenState extends State<PagosScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
-                child: Text(concepto, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                child: Text(
+                  item['concepto'] ?? 'Cuota de Mantenimiento',
+                  style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -119,19 +165,28 @@ class _PagosScreenState extends State<PagosScreen> {
                   color: colorEstado.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Text(textoEstado, style: TextStyle(color: colorEstado, fontSize: 11, fontWeight: FontWeight.bold)),
+                child: Text(
+                  textoEstado,
+                  style: TextStyle(color: colorEstado, fontSize: 11, fontWeight: FontWeight.bold),
+                ),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          Text('Monto Total: $monto', style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 16, fontWeight: FontWeight.bold)),
-          Text('Vencimiento: $vencimiento', style: const TextStyle(color: Colors.white54, fontSize: 12)),
+          Text(
+            'Monto Total: ${item['monto_formateado'] ?? 'S/ 0.00'}',
+            style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          Text(
+            'Vencimiento: ${item['fecha_vencimiento'] ?? '12 de cada mes'}',
+            style: const TextStyle(color: Colors.white54, fontSize: 12),
+          ),
           const SizedBox(height: 16),
           Row(
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () {},
+                  onPressed: () => _abrirPdf(item['recibo_pdf_url'] ?? '#'),
                   icon: const Icon(Icons.picture_as_pdf, color: Colors.blueAccent, size: 18),
                   label: const Text('Ver PDF', style: TextStyle(color: Colors.blueAccent)),
                 ),
@@ -139,10 +194,13 @@ class _PagosScreenState extends State<PagosScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: isPagado || isRevision ? null : () {},
+                  onPressed: isPagado || isRevision ? null : () => _modalPagar(item),
                   style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981)),
-                  icon: Icon(isPagado ? Icons.check_circle : Icons.credit_card, color: Colors.white, size: 18),
-                  label: Text(isPagado ? '🟢 Pagado' : (isRevision ? '🟡 Validando' : '💳 Pagar Recibo'), style: const TextStyle(color: Colors.white)),
+                  icon: Icon(isPagado ? Icons.check_circle : (isRevision ? Icons.access_time : Icons.credit_card), color: Colors.white, size: 18),
+                  label: Text(
+                    isPagado ? '🟢 Pagado' : (isRevision ? '🟡 Validando' : '💳 Pagar Recibo'),
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
             ],
