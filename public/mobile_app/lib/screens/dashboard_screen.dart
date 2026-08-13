@@ -32,14 +32,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _sosEnviado = false;
 
   void _dispararSOS() async {
+  final confirm = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      backgroundColor: const Color(0xFF0F172A),
+      title: const Text('🚨 Confirmar Alerta S.O.S.', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+      content: const Text('¿Está seguro de enviar una señal de emergencia médica / auxilio a la Portería?', style: TextStyle(color: Colors.white70)),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, false),
+          child: const Text('Cancelar', style: TextStyle(color: Colors.white54)),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+          onPressed: () => Navigator.pop(ctx, true),
+          child: const Text('¡SÍ, ENVIAR AUXILIO!', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        ),
+      ],
+    ),
+  );
+
+  if (confirm == true) {
     final result = await ApiService.dispararSOS(widget.token);
     if (result['success'] == true) {
       setState(() => _sosEnviado = true);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(backgroundColor: Colors.green, content: Text(result['message'])),
+        SnackBar(backgroundColor: Colors.green, content: Text(result['message'] ?? 'Alerta S.O.S. enviada.')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(backgroundColor: Colors.red, content: Text(result['message'] ?? 'Error al enviar S.O.S.')),
       );
     }
   }
+}
 
   void _abrirSiriShortcut() async {
     final Uri url = Uri.parse('https://www.icloud.com/shortcuts/653d6f68abc0490a81e73c2773d36a90');

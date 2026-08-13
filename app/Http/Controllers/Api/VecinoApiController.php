@@ -93,32 +93,38 @@ class VecinoApiController extends Controller
         }
     }
 
-    /** 3. DISPARAR S.O.S. (ENVÍA ALERTA ROJA EN TIEMPO REAL A PORTERÍA) */
-    public function dispararSOS(Request $request)
-    {
-        try {
-            $user = $request->user();
-            $dpto = $user->departamento ?? \App\Models\Departamento::find($user->departamento_id);
-            $condoId = $dpto?->condominio_id ?? 1;
+    /**
+ * 3. DISPARAR S.O.S. (LÓGICA IDÉNTICA A LA WEB - ALERTA REAL A PORTERÍA Y ADMIN)
+ */
+public function dispararSOS(Request $request)
+{
+    try {
+        $user = $request->user();
+        $dpto = $user->departamento ?? \App\Models\Departamento::find($user->departamento_id ?? 1);
+        $dptoId = $dpto?->id ?? $user->departamento_id ?? 1;
+        $condoId = $dpto?->condominio_id ?? 1;
 
-            $alerta = AlertaSOS::create([
-                'condominio_id'   => $condoId,
-                'departamento_id' => $dpto?->id ?? $user->departamento_id ?? 1,
-                'user_id'         => $user->id,
-                'tipo'            => 'S.O.S. App Nativa',
-                'descripcion'     => "¡ALERTA S.O.S! El residente {$user->name} del Dpto. {$dpto?->numero} requiere asistencia inmediata.",
-                'estado'          => 'Pendiente',
-            ]);
+        $alerta = AlertaSOS::create([
+            'condominio_id'   => $condoId,
+            'departamento_id' => $dptoId,
+            'user_id'         => $user->id,
+            'tipo'            => 'S.O.S. App Nativa',
+            'descripcion'     => "¡ALERTA S.O.S! El residente {$user->name} del Dpto. " . ($dpto?->numero ?? '100') . " requiere asistencia inmediata en Portería.",
+            'estado'          => 'Pendiente',
+        ]);
 
-            return response()->json([
-                'success' => true,
-                'message' => '¡Alerta S.O.S. enviada a Portería! La ayuda está en camino.',
-                'alerta'  => $alerta,
-            ], 200);
-        } catch (\Throwable $e) {
-            return response()->json(['success' => false, 'message' => 'Error SOS: ' . $e->getMessage()], 500);
-        }
+        return response()->json([
+            'success' => true,
+            'message' => '¡Alerta S.O.S. enviada a Portería! La ayuda está en camino.',
+            'alerta'  => $alerta,
+        ], 200);
+    } catch (\Throwable $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Error al disparar S.O.S: ' . $e->getMessage(),
+        ], 500);
     }
+}
 
     /** 4. INVITADOS */
     public function invitados(Request $request)
