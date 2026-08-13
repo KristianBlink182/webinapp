@@ -57,44 +57,91 @@ class VecinoApiController extends Controller
             return response()->json(['success' => false, 'message' => 'Error Dashboard: ' . $e->getMessage()], 500);
         }
     }
-
-    /** 2. MIS PAGOS Y RECIBOS - CONEXIÓN GARANTIZADA AL DPTO 100 */
+/** 2. MIS PAGOS Y RECIBOS */
     public function misPagos(Request $request)
     {
         try {
             $user = $request->user();
-            $dptoId = $user->departamento_id ?? $user->departamento?->id ?? 1;
+            $dptoId = $user->departamento_id ?? 1;
 
             $pagos = Pago::where('departamento_id', $dptoId)
                 ->orderBy('created_at', 'desc')
                 ->get()
                 ->map(function ($pago) {
-                    $mes = $pago->mes ?? 'Febrero';
-                    $anio = $pago->anio ?? date('Y');
-                    $conceptoFormat = !empty($pago->concepto) ? $pago->concepto : ("Cuota de Mantenimiento - " . $mes . " " . $anio);
-
                     return [
-                        'id'               => $pago->id,
-                        'concepto'         => $conceptoFormat,
-                        'mes'              => $mes,
-                        'anio'             => $anio,
-                        'monto_mantenimiento' => (float) ($pago->monto_mantenimiento ?? 0),
-                        'monto_luz'           => (float) ($pago->monto_luz ?? 0),
-                        'monto_agua'          => (float) ($pago->monto_agua ?? 0),
-                        'monto_total'      => (float) $pago->monto,
-                        'monto_formateado' => 'S/ ' . number_format((float)$pago->monto, 2, '.', ''),
-                        'estado'           => $pago->estado ?? 'Pendiente',
-                        'fecha_vencimiento' => '12 de cada mes',
-                        'recibo_pdf_url'   => route('pago.pdf', $pago->id),
+                        'id' => $pago->id,
+                        'concepto' => $pago->concepto ?? $pago->concepto_pago ?? 'Cuota de Mantenimiento',
+                        'mes' => $pago->mes ?? 'Mes Actual',
+                        'monto' => (float)($pago->monto ?? $pago->monto_mantenimiento ?? 0),
+                        'monto_formateado' => 'S/ ' . number_format((float)($pago->monto ?? $pago->monto_mantenimiento ?? 0), 2, '.', ','),
+                        'estado' => $pago->estado ?? 'Pendiente',
+                        'fecha_vencimiento' => $pago->fecha_vencimiento ?? '12 de cada mes',
+                        'recibo_pdf_url' => url('/api/v1/vecino/pagos/' . $pago->id . '/pdf'),
                     ];
                 });
 
             return response()->json(['success' => true, 'data' => $pagos], 200);
-        } catch (\Throwable $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error Pagos: ' . $e->getMessage()], 500);
         }
     }
 
+    /** DESCARGAR O VER RECIBO PDF */
+    public function descargarPdf($id)
+    {
+        try {
+            $pago = Pago::with(['departamento', 'condominio'])->find($id);
+
+            if (!$pago) {
+                return response()->json(['error' => 'Recibo no encontrado'], 404);
+            }
+
+            if (view()->exists('vendor.filament-panels.recibo')) {
+                if (class_exists('\Barryvdh\DomPDF\Facade\Pdf')) {
+                    $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('vendor.filament-panels.recibo', ['pago' => $pago]);
+                    return $pdf->stream("recibo-{$pago->id}.pdf");
+                }
+                return view('vendor.filament-panels.recibo', ['pago' => $pago]);
+            }
+
+            return response()->json(['message' => 'Vista de recibo no configurada'], 404);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Error al generar recibo: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /** REPORTAR / ADJUNTAR COMPROBANTE DE PAGO */
+    public function reportarPago(Request $request)
+    {
+        try {
+            $request->validate([
+                'pago_id' => 'required',
+                'voucher' => 'required|image|mimes:jpeg,png,jpg,webp|max:10240',
+            ]);
+
+            $pago = Pago::find($request->pago_id);
+            if (!$pago) {
+                return response()->json(['success' => false, 'message' => 'Recibo no encontrado'], 404);
+            }
+
+            if ($request->hasFile('voucher')) {
+                $path = $request->file('voucher')->store('vouchers', 'public');
+                $pago->comprobante_pago = $path;
+                $pago->estado = 'revision';
+                $pago->save();
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Comprobante adjuntado con éxito. Queda en estado Validando.'
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al subir voucher: ' . $e->getMessage()
+            ], 500);
+        }
+    }
     /**
  * 3. DISPARAR S.O.S. (LÓGICA IDÉNTICA A LA WEB - ALERTA REAL A PORTERÍA Y ADMIN)
  */

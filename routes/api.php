@@ -11,7 +11,7 @@ use App\Http\Controllers\Api\VecinoApiController;
 */
 
 // RUTA DE PRUEBA EN NAVEGADOR
-Route::get('v1/test/pagos', function () {
+Route::get('/v1/test/pagos', function () {
     $pagos = \App\Models\Pago::orderBy('created_at', 'desc')->get();
     return response()->json([
         'success' => true,
@@ -33,6 +33,8 @@ Route::prefix('v1')->group(function () {
 
     // Pagos & Recibos
     Route::get('/vecino/pagos', [VecinoApiController::class, 'misPagos']);
+    Route::post('/vecino/pagos/reportar', [VecinoApiController::class, 'reportarPago']);
+    Route::get('/vecino/pagos/{id}/pdf', [VecinoApiController::class, 'descargarPdf']);
 
     // Invitados (Portería)
     Route::get('/vecino/invitados', [VecinoApiController::class, 'invitados']);
