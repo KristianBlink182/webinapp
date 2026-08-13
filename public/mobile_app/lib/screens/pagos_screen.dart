@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -16,6 +15,7 @@ class PagosScreen extends StatefulWidget {
 
 class _PagosScreenState extends State<PagosScreen> {
   List<dynamic> _pagos = [];
+  Map<String, dynamic> _cuentasBancarias = {};
   bool _isLoading = true;
   XFile? _voucherImage;
   bool _isUploading = false;
@@ -31,6 +31,7 @@ class _PagosScreenState extends State<PagosScreen> {
     if (res['success'] == true) {
       setState(() {
         _pagos = res['data'] ?? [];
+        _cuentasBancarias = res['cuentas_bancarias'] ?? {};
         _isLoading = false;
       });
     } else {
@@ -62,98 +63,102 @@ class _PagosScreenState extends State<PagosScreen> {
             return AlertDialog(
               backgroundColor: const Color(0xFF0F172A),
               title: const Text(
-                '📸 Adjuntar Comprobante de Pago',
+                '💳 Adjuntar Comprobante de Pago',
                 style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
               ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Concepto: ${pago['concepto'] ?? 'Cuota de Mantenimiento'}',
-                    style: const TextStyle(color: Colors.white70, fontSize: 13),
-                  ),
-                  Text(
-                    'Monto Total: ${pago['monto_formateado'] ?? 'S/ 0.00'}',
-                    style: const TextStyle(color: Color(0xFF38BDF8), fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Botones de Selección de Imagen
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () async {
-                            final picker = ImagePicker();
-                            final picked = await picker.pickImage(source: ImageSource.camera);
-                            if (picked != null) {
-                              setModalState(() {
-                                _voucherImage = picked;
-                              });
-                            }
-                          },
-                          icon: const Icon(Icons.camera_alt, size: 18),
-                          label: const Text('Cámara'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF0284C7),
-                            foregroundColor: Colors.white,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () async {
-                            final picker = ImagePicker();
-                            final picked = await picker.pickImage(source: ImageSource.gallery);
-                            if (picked != null) {
-                              setModalState(() {
-                                _voucherImage = picked;
-                              });
-                            }
-                          },
-                          icon: const Icon(Icons.photo_library, size: 18),
-                          label: const Text('Galería'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF334155),
-                            foregroundColor: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  // Previsualización de comprobante
-                  if (_voucherImage != null)
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.check_circle, color: Colors.green, size: 20),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Imagen adjuntada: ${_voucherImage!.name}',
-                              style: const TextStyle(color: Colors.greenAccent, fontSize: 11),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  else
-                    const Text(
-                      'Por favor adjunta la foto de tu Yape, Plin o Transferencia.',
-                      style: TextStyle(color: Colors.white54, fontSize: 12),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Concepto: ${pago['concepto'] ?? 'Cuota de Mantenimiento'}',
+                      style: const TextStyle(color: Colors.white70, fontSize: 13),
                     ),
-                ],
+                    Text(
+                      'Monto Total: ${pago['monto_formateado'] ?? 'S/ 0.00'}',
+                      style: const TextStyle(color: Color(0xFF38BDF8), fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Tarjeta de Cuentas Bancarias del Edificio
+                    if (_cuentasBancarias.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.blueGrey.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.white12),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('🏦 Cuentas del Edificio:', style: TextStyle(color: Colors.amberAccent, fontSize: 12, fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 4),
+                            Text('Titular: ${_cuentasBancarias['titular'] ?? ''}', style: const TextStyle(color: Colors.white70, fontSize: 11)),
+                            Text('Banco/Cuenta: ${_cuentasBancarias['banco']} - ${_cuentasBancarias['numero_cuenta']}', style: const TextStyle(color: Colors.white70, fontSize: 11)),
+                            Text('CCI: ${_cuentasBancarias['cci']}', style: const TextStyle(color: Colors.white70, fontSize: 11)),
+                            Text('Yape/Plin: ${_cuentasBancarias['yape_plin']}', style: const TextStyle(color: Colors.greenAccent, fontSize: 11, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      ),
+
+                    const SizedBox(height: 16),
+
+                    // Botón Único de Galería (Seguro para iOS/Android)
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () async {
+                          final picker = ImagePicker();
+                          final picked = await picker.pickImage(source: ImageSource.gallery);
+                          if (picked != null) {
+                            setModalState(() {
+                              _voucherImage = picked;
+                            });
+                          }
+                        },
+                        icon: const Icon(Icons.photo_library, size: 20),
+                        label: const Text('Elegir Comprobante de Galería'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0284C7),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // Previsualización
+                    if (_voucherImage != null)
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.check_circle, color: Colors.green, size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Adjuntado: ${_voucherImage!.name}',
+                                style: const TextStyle(color: Colors.greenAccent, fontSize: 11),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      const Text(
+                        'Selecciona la captura de tu Yape, Plin o Transferencia.',
+                        style: TextStyle(color: Colors.white54, fontSize: 12),
+                      ),
+                  ],
+                ),
               ),
               actions: [
                 TextButton(
@@ -342,12 +347,12 @@ class _PagosScreenState extends State<PagosScreen> {
                     disabledBackgroundColor: isPagado ? Colors.green.withOpacity(0.3) : Colors.amber.withOpacity(0.3),
                   ),
                   icon: Icon(
-                    isPagado ? Icons.check_circle : (isRevision ? Icons.access_time : Icons.camera_alt),
+                    isPagado ? Icons.check_circle : (isRevision ? Icons.access_time : Icons.payments),
                     color: Colors.white,
                     size: 18,
                   ),
                   label: Text(
-                    isPagado ? 'Pagado' : (isRevision ? 'Validando' : '📷 Adjuntar Pago'),
+                    isPagado ? 'Pagado' : (isRevision ? 'Validando' : '💳 Adjuntar Pago'),
                     style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                 ),

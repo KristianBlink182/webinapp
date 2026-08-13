@@ -57,12 +57,23 @@ class VecinoApiController extends Controller
             return response()->json(['success' => false, 'message' => 'Error Dashboard: ' . $e->getMessage()], 500);
         }
     }
-/** 2. MIS PAGOS Y RECIBOS */
+/** 2. MIS PAGOS Y RECIBOS CON CUENTAS BANCARIAS DEL EDIFICIO */
     public function misPagos(Request $request)
     {
         try {
             $user = $request->user();
             $dptoId = $user->departamento_id ?? 1;
+            $dpto = \App\Models\Departamento::with('condominio')->find($dptoId);
+            $condominio = $dpto->condominio ?? null;
+
+            // Cuentas bancarias dinámicas según el edificio del vecino
+            $cuentasBancarias = [
+                'banco' => $condominio->banco_nombre ?? 'BCP / BBVA',
+                'numero_cuenta' => $condominio->numero_cuenta ?? 'Consulte con Administración',
+                'cci' => $condominio->cci ?? 'N/E',
+                'titular' => $condominio->razon_social ?? $condominio->nombre ?? 'Administración del Edificio',
+                'yape_plin' => $condominio->yape_plin ?? 'Yape / Plin habilitado',
+            ];
 
             $pagos = Pago::where('departamento_id', $dptoId)
                 ->orderBy('created_at', 'desc')
@@ -80,17 +91,21 @@ class VecinoApiController extends Controller
                     ];
                 });
 
-            return response()->json(['success' => true, 'data' => $pagos], 200);
+            return response()->json([
+                'success' => true,
+                'cuentas_bancarias' => $cuentasBancarias,
+                'data' => $pagos
+            ], 200);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error Pagos: ' . $e->getMessage()], 500);
         }
     }
 
-    /** DESCARGAR O VER RECIBO PDF */
+    /** DESCARGAR O VER RECIBO PDF (SIN ERROR DE RELACIÓN) */
     public function descargarPdf($id)
     {
         try {
-            $pago = Pago::with(['departamento', 'condominio'])->find($id);
+            $pago = Pago::find($id);
 
             if (!$pago) {
                 return response()->json(['error' => 'Recibo no encontrado'], 404);

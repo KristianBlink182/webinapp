@@ -29,9 +29,10 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   int _currentIndex = 0;
-  bool _sosEnviado = false;
-  String _montoFormateado = 'S/ 0.00';
-  bool _estaAlDia = true;
+  String _montoDeudaStr = 'S/ 0.00';
+  bool _hasDeuda = false;
+  bool _isLoading = true;
+  bool _isSosActivo = false;
 
   @override
   void initState() {
@@ -41,29 +42,89 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   void _cargarDashboardData() async {
     final res = await ApiService.getDashboard(widget.token);
-    if (res['success'] == true && res['data'] != null) {
-      final estadoCuenta = res['data']['estado_cuenta'];
-      if (estadoCuenta != null) {
-        setState(() {
-          _montoFormateado = estadoCuenta['monto_formateado'] ?? 'S/ 0.00';
-          _estaAlDia = estadoCuenta['esta_al_dia'] ?? true;
-        });
-      }
+    if (res['success'] == true) {
+      setState(() {
+        _montoDeudaStr = res['monto_formateado'] ?? 'S/ 0.00';
+        _hasDeuda = (res['deuda_acumulada'] ?? 0) > 0;
+        _isLoading = false;
+      });
+    } else {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
+  // Modal de Confirmación S.O.S.
+  void _confirmarYDispararSOS() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF0F172A),
+        title: const Text(
+          '🚨 ALERTA DE EMERGENCIA S.O.S.',
+          style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 18),
+        ),
+        content: const Text(
+          '¿Estás seguro de enviar una señal de auxilio a la Portería del edificio?\n\nEl vigilante recibirá una alerta sonora y visual en tiempo real.',
+          style: TextStyle(color: Colors.white, fontSize: 13),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar', style: TextStyle(color: Colors.white54)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            onPressed: () {
+              Navigator.pop(ctx);
+              _dispararSOS();
+            },
+            child: const Text('🚨 SÍ, DISPARAR S.O.S.', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _dispararSOS() async {
+    setState(() {
+      _isSosActivo = true;
+    });
+
     final result = await ApiService.dispararSOS(widget.token);
+
     if (result['success'] == true) {
-      setState(() => _sosEnviado = true);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(backgroundColor: Colors.green, content: Text(result['message'] ?? 'Alerta S.O.S. enviada.')),
+        SnackBar(
+          backgroundColor: Colors.redAccent,
+          duration: const Duration(seconds: 5),
+          content: Row(
+            children: [
+              const Icon(Icons.warning, color: Colors.white),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  result['message'] ?? '¡ALERTA S.O.S. ENVIADA A PORTERÍA!',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.orange,
+          content: Text(result['message'] ?? 'Error al enviar señal S.O.S.'),
+        ),
       );
     }
   }
 
   void _abrirSiriShortcut() async {
-    final Uri url = Uri.parse('https://www.icloud.com/shortcuts/653d6f68abc0490a81e73c2773d36a90');
+    final Uri url = Uri.parse("https://www.icloud.com/shortcuts/851684fa88d9489a8c12a7776f8eabf2");
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     }
@@ -71,7 +132,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   void _cerrarSesion() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('auth_token');
+    await prefs.clear();
 
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (context) => const LoginScreen()),
@@ -79,7 +140,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _abrirPantalla(Widget screen) {
-    Navigator.of(context).push(MaterialPageRoute(builder: (context) => screen));
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (context) => screen),
+    );
   }
 
   @override
@@ -87,9 +150,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF060913),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF060913),
+        backgroundColor: const Color(0xFF0F172A),
         elevation: 0,
-        title: Image.asset('assets/logo.png', height: 32),
+        title: Row(
+          children: [
+            Image.asset('assets/logo.png', height: 28, errorBuilder: (c, e, s) => const Icon(Icons.apartment, color: Colors.blueAccent)),
+            const SizedBox(width: 8),
+            const Text('LIVO', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_none, color: Colors.white),
@@ -99,25 +168,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
             onSelected: (value) {
               if (value == 'logout') _cerrarSesion();
             },
-            color: const Color(0xFF0F172A),
-            child: CircleAvatar(
-              backgroundColor: const Color(0xFF1E293B),
+            icon: CircleAvatar(
+              backgroundColor: const Color(0xFF0284C7),
               child: Text(
-                widget.vecinoNombre.isNotEmpty ? widget.vecinoNombre[0] : 'V',
+                widget.vecinoNombre.isNotEmpty ? widget.vecinoNombre[0].toUpperCase() : 'V',
                 style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
               ),
             ),
             itemBuilder: (context) => [
               PopupMenuItem(
                 enabled: false,
-                child: Text('Dpto. ${widget.departamentoNumero}', style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                child: Text('Hola, ${widget.vecinoNombre}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
+              PopupMenuItem(
+                enabled: false,
+                child: Text('Dpto. ${widget.departamentoNumero} - ${widget.condominioNombre}', style: const TextStyle(color: Colors.white70, fontSize: 12)),
               ),
               const PopupMenuDivider(),
               const PopupMenuItem(
                 value: 'logout',
                 child: Row(
                   children: [
-                    Icon(Icons.logout, color: Colors.redAccent, size: 18),
+                    Icon(Icons.exit_to_app, color: Colors.redAccent, size: 18),
                     SizedBox(width: 8),
                     Text('Cerrar Sesión', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
                   ],
@@ -125,7 +197,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ],
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 14),
         ],
       ),
       body: IndexedStack(
@@ -148,7 +220,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Escritorio'),
           BottomNavigationBarItem(icon: Icon(Icons.account_balance_wallet), label: 'Finanzas'),
-          BottomNavigationBarItem(icon: Icon(Icons.shield), label: 'Seguridad'),
+          BottomNavigationBarItem(icon: Icon(Icons.security), label: 'Seguridad'),
           BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Gestión'),
           BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Comunidad'),
         ],
@@ -162,54 +234,46 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Tarjeta Bienvenida + Atajo Siri
+          // 1. Tarjeta Bienvenida Siri
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: const Color(0xFF0F172A),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white10),
+              border: Border.all(color: Colors.white12),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '👋 ¡Bienvenido, ${widget.vecinoNombre}!',
-                  style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Departamento ${widget.departamentoNumero} — ${widget.condominioNombre}',
-                  style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 14, fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 16),
+                Text('👋 ¡Bienvenido, ${widget.vecinoNombre}!', style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 4),
+                Text('Departamento ${widget.departamentoNumero} — ${widget.condominioNombre}', style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 13, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 14),
                 SizedBox(
                   width: double.infinity,
-                  height: 42,
                   child: ElevatedButton.icon(
                     onPressed: _abrirSiriShortcut,
+                    icon: const Icon(Icons.phone_iphone, color: Colors.white, size: 18),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF0284C7),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
-                    icon: const Icon(Icons.phone_iphone, color: Colors.white, size: 18),
                     label: const Text('📱 Instalar Atajo de Voz Siri (1 Clic)', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 16),
 
-          // 2. Tarjeta Estado de Cuenta DINÁMICA
+          const SizedBox(height: 14),
+
+          // 2. Tarjeta Estado de Cuenta
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: _estaAlDia
-                    ? [const Color(0xFF7C3AED), const Color(0xFF4C1D95)]
-                    : [const Color(0xFFDC2626), const Color(0xFF991B1B)],
+                colors: _hasDeuda ? [const Color(0xFFDC2626), const Color(0xFF991B1B)] : [const Color(0xFF16A34A), const Color(0xFF15803D)],
               ),
               borderRadius: BorderRadius.circular(16),
             ),
@@ -217,120 +281,101 @@ class _DashboardScreenState extends State<DashboardScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text('ESTADO DE CUENTA', style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 6),
-                Text(_montoFormateado, style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
+                Text(_montoDeudaStr, style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 4),
                 Text(
-                  _estaAlDia ? '✅ ¡Estás al día!' : '⚠️ Tienes cuotas pendientes de pago',
-                  style: TextStyle(
-                    color: _estaAlDia ? Colors.greenAccent : Colors.amberAccent,
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  _hasDeuda ? '⚠️ Tienes cuotas pendientes de pago' : '🟢 Estás al día en tus pagos',
+                  style: const TextStyle(color: Colors.amberAccent, fontSize: 12, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 16),
 
-          // 3. Botón SOS de Pánico
+          const SizedBox(height: 14),
+
+          // 3. Botón S.O.S. de Pánico
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: _sosEnviado ? Colors.green.withOpacity(0.2) : Colors.red.withOpacity(0.15),
+              color: const Color(0xFF1E1B1E),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: _sosEnviado ? Colors.green : Colors.red),
+              border: Border.all(color: Colors.red.withOpacity(0.4)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  _sosEnviado ? '🟢 AYUDA EN CAMINO' : '🚨 BOTÓN DE PÁNICO S.O.S.',
-                  style: TextStyle(color: _sosEnviado ? Colors.greenAccent : Colors.redAccent, fontWeight: FontWeight.bold),
+                Row(
+                  children: const [
+                    Icon(Icons.campaign, color: Colors.redAccent, size: 20),
+                    SizedBox(width: 8),
+                    Text('BOTÓN DE PÁNICO S.O.S.', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 12)),
+                  ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 SizedBox(
                   width: double.infinity,
-                  height: 48,
                   child: ElevatedButton.icon(
-                    onPressed: _dispararSOS,
-                    style: ElevatedButton.styleFrom(backgroundColor: _sosEnviado ? Colors.green : Colors.red),
-                    icon: const Icon(Icons.warning, color: Colors.white),
+                    onPressed: _confirmarYDispararSOS,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.redAccent,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    icon: const Icon(Icons.warning, color: Colors.white, size: 20),
                     label: Text(
-                      _sosEnviado ? 'ALERTA ENVIADA A PORTERÍA' : 'DISPARAR S.O.S. (1 TOQUE)',
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                      _isSosActivo ? '🚨 S.O.S. ACTIVADO' : '🚨 DISPARAR S.O.S. (1 TOQUE)',
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
                     ),
                   ),
                 ),
               ],
             ),
           ),
+
           const SizedBox(height: 20),
 
-          // 4. Servicios del Condominio (Grid de 4 Tarjetas Nativas)
-          const Text('SERVICIOS DEL CONDOMINIO', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1)),
-          const SizedBox(height: 12),
+          // 4. Servicios del Condominio Grid
+          const Text('SERVICIOS DEL CONDOMINIO', style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1)),
+          const SizedBox(height: 10),
 
           GridView.count(
-            crossAxisCount: 2,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: 2,
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
-            childAspectRatio: 1.3,
+            childAspectRatio: 1.2,
             children: [
-              _buildServiceCard(
-                icon: Icons.account_balance_wallet,
-                iconColor: const Color(0xFFA855F7),
-                title: 'Mis Pagos',
-                subtitle: 'Recibos y vouchers',
-                onTap: () => _abrirPantalla(PagosScreen(token: widget.token)),
-              ),
-              _buildServiceCard(
-                icon: Icons.campaign,
-                iconColor: const Color(0xFF10B981),
-                title: 'Avisos',
-                subtitle: 'Comunicados',
-                onTap: () => _abrirPantalla(ComunicadosListScreen(token: widget.token)),
-              ),
-              _buildServiceCard(
-                icon: Icons.pets,
-                iconColor: const Color(0xFFEC4899),
-                title: 'Mascotas',
-                subtitle: 'Registro',
-                onTap: () => _abrirPantalla(MascotasListScreen(token: widget.token)),
-              ),
-              _buildServiceCard(
-                icon: Icons.chat_bubble_outline,
-                iconColor: const Color(0xFF14B8A6),
-                title: 'Reclamos',
-                subtitle: 'Sugerencias',
-                onTap: () => _abrirPantalla(ReclamosListScreen(token: widget.token)),
-              ),
+              _buildServiceCard('Mis Pagos', 'Recibos y vouchers', Icons.account_balance_wallet, const Color(0xFF0284C7), () {
+                setState(() => _currentIndex = 1);
+              }),
+              _buildServiceCard('Avisos', 'Comunicados', Icons.campaign, const Color(0xFF10B981), () {
+                setState(() => _currentIndex = 4);
+              }),
+              _buildServiceCard('Mascotas', 'Padrón de mascotas', Icons.pets, const Color(0xFFF59E0B), () {
+                _abrirPantalla(MascotasScreen(token: widget.token));
+              }),
+              _buildServiceCard('Reclamos', 'Sugerencias', Icons.chat_bubble_outline, const Color(0xFF8B5CF6), () {
+                _abrirPantalla(ReclamosScreen(token: widget.token));
+              }),
             ],
           ),
-          const SizedBox(height: 24),
         ],
       ),
     );
   }
 
-  Widget _buildServiceCard({
-    required IconData icon,
-    required Color iconColor,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
+  Widget _buildServiceCard(String title, String subtitle, IconData icon, Color color, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: const Color(0xFF0F172A),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white10),
+          border: Border.all(color: Colors.white12),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -338,15 +383,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
           children: [
             Container(
               padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: iconColor.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, color: iconColor, size: 24),
+              decoration: BoxDecoration(color: color.withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
+              child: Icon(icon, color: color, size: 24),
             ),
             const SizedBox(height: 10),
             Text(title, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 2),
             Text(subtitle, style: const TextStyle(color: Colors.white54, fontSize: 11)),
           ],
         ),
