@@ -104,7 +104,7 @@ class _InvitadosListScreenState extends State<InvitadosListScreen> {
   }
 }
 
-// 2. MARKETPLACE VECINAL (CON WHATSAPP DE CONTACTO DIRECTO)
+// 2. MARKETPLACE VECINAL (CON FOTOS REALES Y BOTÓN WHATSAPP)
 class MarketplaceListScreen extends StatefulWidget {
   final String token;
   const MarketplaceListScreen({Key? key, required this.token}) : super(key: key);
@@ -134,32 +134,46 @@ class _MarketplaceListScreenState extends State<MarketplaceListScreen> {
   }
 
   void _modalPublicar() {
-    final _tCtrl = TextEditingController(); final _pCtrl = TextEditingController(); final _dCtrl = TextEditingController();
+    final _pCtrl = TextEditingController();
+    final _precioCtrl = TextEditingController();
+    final _telfCtrl = TextEditingController();
+    final _dCtrl = TextEditingController();
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF0F172A),
         title: const Text('🛒 Publicar Producto', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TextField(controller: _tCtrl, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(hintText: 'Título del producto', hintStyle: TextStyle(color: Colors.white30))),
-            const SizedBox(height: 8),
-            TextField(controller: _pCtrl, keyboardType: TextInputType.number, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(hintText: 'Precio (S/)', hintStyle: TextStyle(color: Colors.white30))),
-            const SizedBox(height: 8),
-            TextField(controller: _dCtrl, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(hintText: 'Descripción', hintStyle: TextStyle(color: Colors.white30))),
-          ],
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(controller: _pCtrl, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(hintText: 'Nombre del producto / servicio', hintStyle: TextStyle(color: Colors.white30))),
+              const SizedBox(height: 8),
+              TextField(controller: _precioCtrl, keyboardType: TextInputType.number, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(hintText: 'Precio (S/)', hintStyle: TextStyle(color: Colors.white30))),
+              const SizedBox(height: 8),
+              TextField(controller: _telfCtrl, keyboardType: TextInputType.phone, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(hintText: 'Teléfono / WhatsApp de contacto', hintStyle: TextStyle(color: Colors.white30))),
+              const SizedBox(height: 8),
+              TextField(controller: _dCtrl, maxLines: 2, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(hintText: 'Descripción del producto...', hintStyle: TextStyle(color: Colors.white30))),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: () {},
+                icon: const Icon(Icons.camera_alt, color: Color(0xFFF59E0B)),
+                label: const Text('📸 Adjuntar Foto del Producto', style: TextStyle(color: Color(0xFFF59E0B))),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar', style: TextStyle(color: Colors.white54))),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFF59E0B)),
             onPressed: () async {
-              if (_tCtrl.text.isEmpty) return;
+              if (_pCtrl.text.isEmpty) return;
               Navigator.pop(ctx);
               setState(() => _isLoading = true);
-              final res = await ApiService.registrarMarketplace(widget.token, _tCtrl.text.trim(), _pCtrl.text.trim(), _dCtrl.text.trim());
+              final res = await ApiService.registrarMarketplace(widget.token, _pCtrl.text.trim(), _precioCtrl.text.trim(), _dCtrl.text.trim());
               if (res['success'] == true) { ScaffoldMessenger.of(context).showSnackBar(SnackBar(backgroundColor: Colors.green, content: Text(res['message']))); _cargar(); }
             },
             child: const Text('Publicar'),
@@ -190,20 +204,35 @@ class _MarketplaceListScreenState extends State<MarketplaceListScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          if (item['imagen_url'] != null) ...[
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.network(
+                                item['imagen_url'],
+                                height: 160,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                                errorBuilder: (c, e, s) => const SizedBox(),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                          ],
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(item['titulo'] ?? '', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                              Text(item['precio'] ?? 'S/ 0.00', style: const TextStyle(color: Color(0xFFF59E0B), fontWeight: FontWeight.bold, fontSize: 16)),
+                              Expanded(child: Text(item['producto'] ?? 'Producto', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16))),
+                              Text(item['precio_formateado'] ?? 'S/ 0.00', style: const TextStyle(color: Color(0xFFF59E0B), fontWeight: FontWeight.bold, fontSize: 16)),
                             ],
                           ),
                           const SizedBox(height: 6),
                           Text(item['descripcion'] ?? '', style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                          const SizedBox(height: 8),
+                          Text('Vendedor: ${item['vendedor']}', style: const TextStyle(color: Colors.white54, fontSize: 12)),
                           const SizedBox(height: 12),
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton.icon(
-                              onPressed: () => _abrirWhatsApp(item['contacto'] ?? '987654321', item['titulo'] ?? 'Producto'),
+                              onPressed: () => _abrirWhatsApp(item['telefono_whatsapp'] ?? '987654321', item['producto'] ?? 'Producto'),
                               style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF25D366)),
                               icon: const Icon(Icons.chat, color: Colors.white, size: 18),
                               label: const Text('💬 Contactar por WhatsApp', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),

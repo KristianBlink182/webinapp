@@ -228,41 +228,60 @@ public function dispararSOS(Request $request)
         return response()->json(['success' => true, 'data' => $comunicados], 200);
     }
 
-    /** 8. MARKETPLACE */
+   /** 8. MARKETPLACE VECINAL (100% MAPEADO CON LA WEB) */
     public function marketplace(Request $request)
     {
-        $condoId = $request->user()->departamento?->condominio_id ?? 1;
-        $anuncios = Anuncio::where('condominio_id', $condoId)->latest()->get()->map(function ($a) {
-            return [
-                'id'          => $a->id,
-                'titulo'      => $a->titulo,
-                'precio'      => 'S/ ' . number_format((float)($a->precio ?? $a->monto ?? 0), 2),
-                'descripcion' => $a->descripcion,
-                'contacto'    => $a->contacto ?? $a->telefono ?? 'WhatsApp',
-            ];
-        });
+        try {
+            $user = $request->user();
+            $condoId = $user->departamento?->condominio_id ?? 1;
 
-        return response()->json(['success' => true, 'data' => $anuncios], 200);
+            $anuncios = Anuncio::where('condominio_id', $condoId)
+                ->latest()
+                ->get()
+                ->map(function ($a) {
+                    return [
+                        'id'                => $a->id,
+                        'producto'          => $a->producto ?? 'Producto',
+                        'precio'            => (float) ($a->precio ?? 0),
+                        'precio_formateado' => 'S/ ' . number_format((float)($a->precio ?? 0), 2, '.', ''),
+                        'telefono_whatsapp' => $a->telefono_whatsapp ?? $a->user?->telefono ?? '987654321',
+                        'descripcion'       => $a->descripcion ?? '',
+                        'imagen_url'        => $a->imagen ? asset('storage/' . $a->imagen) : null,
+                        'vendedor'          => $a->user?->name ?? 'Vecino',
+                        'fecha'             => $a->created_at->format('d/m/Y'),
+                    ];
+                });
+
+            return response()->json(['success' => true, 'data' => $anuncios], 200);
+        } catch (\Throwable $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
     }
 
     public function registrarMarketplace(Request $request)
     {
         try {
             $user = $request->user();
+            $dpto = $user->departamento;
+
+            $imagePath = null;
+            if ($request->hasFile('imagen')) {
+                $imagePath = $request->file('imagen')->store('marketplace', 'public');
+            }
+
             $anuncio = Anuncio::create([
-                'condominio_id'   => $user->departamento?->condominio_id ?? 1,
-                'departamento_id' => $user->departamento_id ?? 1,
-                'user_id'        => $user->id,
-                'titulo'         => $request->input('titulo'),
-                'precio'         => (float) $request->input('precio', 0),
-                'descripcion'    => $request->input('descripcion'),
-                'contacto'       => $request->input('contacto', $user->telefono ?? 'WhatsApp'),
-                'estado'         => 'Activo',
+                'condominio_id'     => $dpto?->condominio_id ?? 1,
+                'user_id'           => $user->id,
+                'producto'          => $request->input('producto') ?? $request->input('titulo'),
+                'precio'            => (float) $request->input('precio', 0),
+                'telefono_whatsapp' => $request->input('telefono_whatsapp', $user->telefono ?? '987654321'),
+                'descripcion'       => $request->input('descripcion'),
+                'imagen'            => $imagePath,
             ]);
 
-            return response()->json(['success' => true, 'message' => 'Producto publicado en el Marketplace Vecinal.'], 200);
+            return response()->json(['success' => true, 'message' => 'Producto publicado con éxito en el Marketplace Vecinal.'], 200);
         } catch (\Throwable $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Error al publicar: ' . $e->getMessage()], 500);
         }
     }
 
