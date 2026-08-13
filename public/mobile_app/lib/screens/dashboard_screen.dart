@@ -30,42 +30,37 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   int _currentIndex = 0;
   bool _sosEnviado = false;
+  String _montoFormateado = 'S/ 0.00';
+  bool _estaAlDia = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarDashboardData();
+  }
+
+  void _cargarDashboardData() async {
+    final res = await ApiService.getDashboard(widget.token);
+    if (res['success'] == true && res['data'] != null) {
+      final estadoCuenta = res['data']['estado_cuenta'];
+      if (estadoCuenta != null) {
+        setState(() {
+          _montoFormateado = estadoCuenta['monto_formateado'] ?? 'S/ 0.00';
+          _estaAlDia = estadoCuenta['esta_al_dia'] ?? true;
+        });
+      }
+    }
+  }
 
   void _dispararSOS() async {
-  final confirm = await showDialog<bool>(
-    context: context,
-    builder: (ctx) => AlertDialog(
-      backgroundColor: const Color(0xFF0F172A),
-      title: const Text('🚨 Confirmar Alerta S.O.S.', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
-      content: const Text('¿Está seguro de enviar una señal de emergencia médica / auxilio a la Portería?', style: TextStyle(color: Colors.white70)),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(ctx, false),
-          child: const Text('Cancelar', style: TextStyle(color: Colors.white54)),
-        ),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-          onPressed: () => Navigator.pop(ctx, true),
-          child: const Text('¡SÍ, ENVIAR AUXILIO!', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        ),
-      ],
-    ),
-  );
-
-  if (confirm == true) {
     final result = await ApiService.dispararSOS(widget.token);
     if (result['success'] == true) {
       setState(() => _sosEnviado = true);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(backgroundColor: Colors.green, content: Text(result['message'] ?? 'Alerta S.O.S. enviada.')),
       );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(backgroundColor: Colors.red, content: Text(result['message'] ?? 'Error al enviar S.O.S.')),
-      );
     }
   }
-}
 
   void _abrirSiriShortcut() async {
     final Uri url = Uri.parse('https://www.icloud.com/shortcuts/653d6f68abc0490a81e73c2773d36a90');
@@ -206,22 +201,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           const SizedBox(height: 16),
 
-          // 2. Tarjeta Estado de Cuenta (Ancho Completo)
+          // 2. Tarjeta Estado de Cuenta DINÁMICA
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [Color(0xFF7C3AED), Color(0xFF4C1D95)]),
+              gradient: LinearGradient(
+                colors: _estaAlDia
+                    ? [const Color(0xFF7C3AED), const Color(0xFF4C1D95)]
+                    : [const Color(0xFFDC2626), const Color(0xFF991B1B)],
+              ),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text('ESTADO DE CUENTA', style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold)),
-                SizedBox(height: 6),
-                Text('S/ 0.00', style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
-                SizedBox(height: 6),
-                Text('✅ ¡Estás al día!', style: TextStyle(color: Colors.greenAccent, fontSize: 13, fontWeight: FontWeight.bold)),
+              children: [
+                const Text('ESTADO DE CUENTA', style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 6),
+                Text(_montoFormateado, style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 6),
+                Text(
+                  _estaAlDia ? '✅ ¡Estás al día!' : '⚠️ Tienes cuotas pendientes de pago',
+                  style: TextStyle(
+                    color: _estaAlDia ? Colors.greenAccent : Colors.amberAccent,
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ],
             ),
           ),

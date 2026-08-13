@@ -157,3 +157,8 @@ Route::match(['get', 'post'], '/api/alexa-sos', function (Illuminate\Http\Reques
     \Illuminate\Session\Middleware\StartSession::class,
     \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
 ]);
+// RUTA OFICIAL DEL RECIBO PDF DE VECINOS
+Route::get('/recibo/pdf/{id}', function ($id) {
+    $pago = \App\Models\Pago::findOrFail($id);
+    return view('recibo', compact('pago'));
+})->name('pago.pdf');

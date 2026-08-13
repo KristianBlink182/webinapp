@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../api_service.dart';
 
@@ -14,6 +15,7 @@ class PagosScreen extends StatefulWidget {
 class _PagosScreenState extends State<PagosScreen> {
   List<dynamic> _pagos = [];
   bool _isLoading = true;
+  XFile? _voucherImage;
 
   @override
   void initState() {
@@ -41,42 +43,55 @@ class _PagosScreenState extends State<PagosScreen> {
   }
 
   void _modalPagar(dynamic pago) {
+    _voucherImage = null;
+
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF0F172A),
-        title: const Text('💳 Reportar Comprobante de Pago', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Concepto:', style: TextStyle(color: Colors.white70, fontSize: 12)),
-            Text(pago['concepto'] ?? '', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-            const SizedBox(height: 12),
-            const Text('Monto Total:', style: TextStyle(color: Colors.white70, fontSize: 12)),
-            Text(pago['monto_formateado'] ?? '', style: const TextStyle(color: Color(0xFF38BDF8), fontWeight: FontWeight.bold, fontSize: 18)),
-            const SizedBox(height: 16),
-            OutlinedButton.icon(
-              onPressed: () {},
-              icon: const Icon(Icons.camera_alt, color: Color(0xFF10B981)),
-              label: const Text('📸 Adjuntar Voucher Yape/Plin', style: TextStyle(color: Color(0xFF10B981))),
-            ),
+      builder: (ctx) => StatefulWidget(
+        builder: (context, setModalState) => AlertDialog(
+          backgroundColor: const Color(0xFF0F172A),
+          title: const Text('💳 Reportar Comprobante de Pago', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Concepto:', style: TextStyle(color: Colors.white70, fontSize: 12)),
+              Text(pago['concepto'] ?? '', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+              const SizedBox(height: 12),
+              const Text('Monto Total:', style: TextStyle(color: Colors.white70, fontSize: 12)),
+              Text(pago['monto_formateado'] ?? '', style: const TextStyle(color: Color(0xFF38BDF8), fontWeight: FontWeight.bold, fontSize: 18)),
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                onPressed: () async {
+                  final picker = ImagePicker();
+                  final picked = await picker.pickImage(source: ImageSource.gallery);
+                  if (picked != null) {
+                    setModalState(() => _voucherImage = picked);
+                  }
+                },
+                icon: Icon(_voucherImage != null ? Icons.check_circle : Icons.camera_alt, color: const Color(0xFF10B981)),
+                label: Text(
+                  _voucherImage != null ? '✅ Comprobante Adjuntado' : '📸 Adjuntar Voucher Yape/Plin',
+                  style: const TextStyle(color: Color(0xFF10B981)),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar', style: TextStyle(color: Colors.white54))),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981)),
+              onPressed: () {
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(backgroundColor: Colors.green, content: Text('Comprobante enviado a la administración. Estado actual: Validando Pago.')),
+                );
+                _cargarPagos();
+              },
+              child: const Text('🚀 Enviar Pago', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            )
           ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar', style: TextStyle(color: Colors.white54))),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981)),
-            onPressed: () {
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(backgroundColor: Colors.green, content: Text('Comprobante enviado a la administración para su validación.')),
-              );
-              _cargarPagos();
-            },
-            child: const Text('🚀 Enviar Pago', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-          )
-        ],
       ),
     );
   }

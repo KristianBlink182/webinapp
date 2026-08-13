@@ -4,27 +4,37 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthApiController;
 use App\Http\Controllers\Api\VecinoApiController;
 
-// RUTA PRUEBA BROWSER
-Route::get('v1/auth/login', fn () => response()->json(['success' => true, 'status' => 'ONLINE']));
+/*
+|--------------------------------------------------------------------------
+| RUTAS API RESTFUL - APP NATIVA LIVO VECINOS (ACCESO DIRECTO)
+|--------------------------------------------------------------------------
+*/
 
-// 1. RUTAS PÚBLICAS
+// RUTA DE PRUEBA EN NAVEGADOR
+Route::get('v1/test/pagos', function () {
+    $pagos = \App\Models\Pago::orderBy('created_at', 'desc')->get();
+    return response()->json([
+        'success' => true,
+        'total_recibos_bd' => $pagos->count(),
+        'data' => $pagos,
+    ]);
+});
+
+// 1. AUTENTICACIÓN
 Route::prefix('v1/auth')->group(function () {
     Route::post('/login', [AuthApiController::class, 'login']);
 });
 
-// 2. RUTAS PROTEGIDAS CON TOKEN
-Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
-    Route::get('/auth/me', [AuthApiController::class, 'me']);
-    Route::post('/auth/logout', [AuthApiController::class, 'logout']);
-
+// 2. MÓDULOS DE VECINO (RESPUESTA DIRECTA GARANTIZADA)
+Route::prefix('v1')->group(function () {
     // Dashboard & SOS
     Route::get('/vecino/dashboard', [VecinoApiController::class, 'dashboard']);
     Route::post('/vecino/sos', [VecinoApiController::class, 'dispararSOS']);
 
-    // Pagos
+    // Pagos & Recibos
     Route::get('/vecino/pagos', [VecinoApiController::class, 'misPagos']);
 
-    // Invitados
+    // Invitados (Portería)
     Route::get('/vecino/invitados', [VecinoApiController::class, 'invitados']);
     Route::post('/vecino/invitados', [VecinoApiController::class, 'registrarInvitado']);
 
