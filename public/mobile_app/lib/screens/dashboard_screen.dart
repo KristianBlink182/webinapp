@@ -171,8 +171,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         title: Row(
           children: [
             Image.asset('assets/logo.png', height: 28, errorBuilder: (c, e, s) => const Icon(Icons.apartment, color: Colors.blueAccent)),
-            const SizedBox(width: 8),
-            const Text('LIVO', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ],
         ),
         actions: [

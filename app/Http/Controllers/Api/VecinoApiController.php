@@ -57,7 +57,7 @@ class VecinoApiController extends Controller
         }
     }
 
-    /** 2. MIS PAGOS Y RECIBOS (RESOLUCIÓN IDÉNTICA DE LLAVES REALES) */
+   /** 2. MIS PAGOS Y RECIBOS (BÚSQUEDA GARANTIZADA POR DPTO) */
     public function misPagos(Request $request)
     {
         try {
@@ -67,7 +67,8 @@ class VecinoApiController extends Controller
                 ?? \App\Models\Departamento::find($user?->departamento_id) 
                 ?? \App\Models\Departamento::first();
 
-            $dptoId = $dpto?->id;
+            $dptoId = $dpto?->id ?? 1;
+            $dptoNum = $dpto?->numero ?? '100';
             $condoId = $dpto?->condominio_id ?? $user?->condominio_id ?? \App\Models\Condominio::first()?->id;
 
             // Obtener cuentas bancarias reales
@@ -86,7 +87,11 @@ class VecinoApiController extends Controller
                 ];
             }
 
+            // Buscar pagos por departamento_id O por número de dpto (Garantizado)
             $pagos = Pago::where('departamento_id', $dptoId)
+                ->orWhereHas('departamento', function ($q) use ($dptoNum) {
+                    $q->where('numero', $dptoNum);
+                })
                 ->orderBy('created_at', 'desc')
                 ->get()
                 ->map(function ($pago) {
