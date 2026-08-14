@@ -17,74 +17,91 @@ use Illuminate\Http\Request;
 
 class VecinoApiController extends Controller
 {
-    /** 1. DASHBOARD PRINCIPAL */
+  /** 1. DASHBOARD PRINCIPAL (LLAVES REALES DE BD) */
     public function dashboard(Request $request)
     {
         try {
             $user = $request->user();
-            $dpto = $user->departamento ?? \App\Models\Departamento::find($user->departamento_id ?? 1);
-            $dptoId = $user->departamento_id ?? $user->departamento?->id ?? 1;
-            $condominio = $dpto?->condominio;
 
-            // Consultar saldo pendiente acumulado
-            $saldoPendiente = Pago::where('departamento_id', $dptoId)
-               ->whereNotIn('estado', ['Pagado', 'pagado', 'aprobado', 'Aprobado', 'Al Día', 'al dia'])
-                ->sum('monto') ?? 0;
+            $dpto = $user?->departamento 
+                ?? \App\Models\Departamento::find($user?->departamento_id) 
+                ?? \App\Models\Departamento::first();
 
-            $ultimoComunicado = Comunicado::where('condominio_id', $condominio?->id ?? 1)->latest()->first();
+            $dptoId = $dpto?->id;
+
+            // Sumar todas las cuotas no pagadas
+            $deudaAcc = Pago::where('departamento_id', $dptoId)
+                ->whereNotIn('estado', ['Pagado', 'pagado', 'aprobado', 'Aprobado', 'Al Día', 'al dia'])
+                ->sum('monto');
+
+            $ultimoComunicado = Comunicado::latest()->first();
+
+            $montoFmt = 'S/ ' . number_format((float)$deudaAcc, 2, '.', ',');
 
             return response()->json([
                 'success' => true,
-                'data'    => [
-                    'vecino_nombre'       => $user->name ?? 'Giancarlo Veliz',
-                    'departamento_numero' => $dpto?->numero ?? '100',
-                    'condominio_nombre'   => $condominio?->nombre ?? 'Jorge Chavez',
-                    'estado_cuenta'       => [
-                        'monto_pendiente'  => (float) $saldoPendiente,
-                        'monto_formateado' => 'S/ ' . number_format((float)$saldoPendiente, 2, '.', ''),
-                        'esta_al_dia'      => $saldoPendiente <= 0,
-                    ],
-                    'ultimo_comunicado'   => $ultimoComunicado ? [
-                        'id'        => $ultimoComunicado->id,
-                        'titulo'    => $ultimoComunicado->titulo,
-                        'contenido' => $ultimoComunicado->contenido,
-                        'fecha'     => $ultimoComunicado->created_at->format('d/m/Y'),
-                    ] : null,
-                    'alerta_sos_activa'   => false,
-                ]
+                'vecino_nombre' => $user->name ?? 'Estimado Vecino',
+                'departamento_numero' => $dpto?->numero ?? '100',
+                'deuda_acumulada' => (float)$deudaAcc,
+                'monto_pendiente' => (float)$deudaAcc,
+                'monto_formateado' => $montoFmt,
+                'esta_al_dia' => $deudaAcc <= 0,
+                'comunicado' => $ultimoComunicado ? [
+                    'titulo' => $ultimoComunicado->titulo,
+                    'descripcion' => $ultimoComunicado->contenido ?? $ultimoComunicado->descripcion ?? '',
+                    'fecha' => $ultimoComunicado->created_at->format('d/m/Y')
+                ] : null
             ], 200);
         } catch (\Throwable $e) {
             return response()->json(['success' => false, 'message' => 'Error Dashboard: ' . $e->getMessage()], 500);
         }
     }
-/** 2. MIS PAGOS Y RECIBOS CON CUENTAS BANCARIAS DEL EDIFICIO */
+
+    /** 2. MIS PAGOS Y RECIBOS (RESOLUCIÓN IDÉNTICA DE LLAVES REALES) */
     public function misPagos(Request $request)
     {
         try {
             $user = $request->user();
-            $dptoId = $user->departamento_id ?? 1;
-            $dpto = \App\Models\Departamento::with('condominio')->find($dptoId);
-            $condominio = $dpto->condominio ?? null;
 
-            // Cuentas bancarias dinámicas según el edificio del vecino
-            $cuentasBancarias = [
-                'banco' => $condominio->banco_nombre ?? 'BCP / BBVA',
-                'numero_cuenta' => $condominio->numero_cuenta ?? 'Consulte con Administración',
-                'cci' => $condominio->cci ?? 'N/E',
-                'titular' => $condominio->razon_social ?? $condominio->nombre ?? 'Administración del Edificio',
-                'yape_plin' => $condominio->yape_plin ?? 'Yape / Plin habilitado',
-            ];
+            $dpto = $user?->departamento 
+                ?? \App\Models\Departamento::find($user?->departamento_id) 
+                ?? \App\Models\Departamento::first();
+
+            $dptoId = $dpto?->id;
+            $condoId = $dpto?->condominio_id ?? $user?->condominio_id ?? \App\Models\Condominio::first()?->id;
+
+            // Obtener cuentas bancarias reales
+            $bancosRegistrados = Banco::where('condominio_id', $condoId)->get();
+
+            $listaCuentas = [];
+            foreach ($bancosRegistrados as $b) {
+                $listaCuentas[] = [
+                    'banco' => $b->nombre_banco ?? 'BCP',
+                    'numero_cuenta' => $b->numero_cuenta ?? 'N/A',
+                    'cci' => $b->cci ?? 'N/A',
+                    'titular' => $b->titular ?? 'Junta de Propietarios',
+                    'tipo_cuenta' => $b->tipo_cuenta ?? 'Corriente',
+                    'es_yape_plin' => (bool)$b->activo_yape_plin,
+                    'yape_numero' => $b->yape_plin_numero ?? '',
+                ];
+            }
 
             $pagos = Pago::where('departamento_id', $dptoId)
                 ->orderBy('created_at', 'desc')
                 ->get()
                 ->map(function ($pago) {
+                    $conceptoBase = !empty($pago->concepto) ? $pago->concepto : 'Cuota de Mantenimiento';
+                    $mesStr = $pago->mes ?? '';
+                    if (!empty($mesStr) && !str_contains($conceptoBase, $mesStr)) {
+                        $conceptoBase = "{$conceptoBase} - {$mesStr}";
+                    }
+
                     return [
                         'id' => $pago->id,
-                        'concepto' => (!empty($pago->concepto) ? $pago->concepto : 'Cuota de Mantenimiento') . (!empty($pago->mes) && !str_contains($pago->concepto ?? '', $pago->mes) ? " - {$pago->mes}" : ''),
+                        'concepto' => $conceptoBase,
                         'mes' => $pago->mes ?? 'Mes Actual',
                         'monto' => (float)($pago->monto ?? $pago->monto_mantenimiento ?? 0),
-                        'monto_formateado' => 'S/ ' . number_format((float)($pago->monto ?? $pago->monto_mantenimiento ?? 0), 2, '.', ','),
+                        'monto_formateado' => 'S/ ' . number_format((float)($pago->monto ?? 0), 2, '.', ','),
                         'estado' => $pago->estado ?? 'Pendiente',
                         'fecha_vencimiento' => $pago->fecha_vencimiento ?? '12 de cada mes',
                         'recibo_pdf_url' => url('/api/v1/vecino/pagos/' . $pago->id . '/pdf'),
@@ -93,7 +110,7 @@ class VecinoApiController extends Controller
 
             return response()->json([
                 'success' => true,
-                'cuentas_bancarias' => $cuentasBancarias,
+                'cuentas_bancarias' => $listaCuentas,
                 'data' => $pagos
             ], 200);
         } catch (\Exception $e) {
@@ -163,21 +180,26 @@ class VecinoApiController extends Controller
         }
     }
     /**
- /** 3. DISPARAR S.O.S. EN TIEMPO REAL A PORTERÍA */
+   /** 3. DISPARAR S.O.S. (SIN CONFLICTOS DE FOREIGN KEY) */
     public function dispararSOS(Request $request)
     {
         try {
             $user = $request->user();
-            $dpto = $user->departamento ?? \App\Models\Departamento::find($user->departamento_id ?? 1);
-            $dptoId = $dpto?->id ?? 1;
-            $condoId = $dpto?->condominio_id ?? $user->condominio_id ?? 1;
 
-            \App\Models\AlertaSOS::create([
+            $dpto = $user?->departamento 
+                ?? \App\Models\Departamento::find($user?->departamento_id) 
+                ?? \App\Models\Departamento::first();
+
+            $dptoId = $dpto?->id;
+            $condoId = $dpto?->condominio_id ?? $user?->condominio_id ?? \App\Models\Condominio::first()?->id;
+            $userId = $user?->id ?? \App\Models\User::first()?->id;
+
+            AlertaSOS::create([
                 'condominio_id' => $condoId,
                 'departamento_id' => $dptoId,
-                'user_id' => $user->id,
+                'user_id' => $userId,
                 'tipo' => 'EMERGENCIA_SOS',
-                'descripcion' => '¡ALERTA S.O.S.! El residente ' . ($user->name ?? 'Vecino') . ' (Dpto. ' . ($dpto?->numero ?? 'N/E') . ') solicita ayuda urgente en Portería.',
+                'descripcion' => '¡ALERTA S.O.S.! El residente ' . ($user?->name ?? 'Eduardo Ibañez') . ' (Dpto. ' . ($dpto?->numero ?? '100') . ') solicita ayuda urgente en Portería.',
                 'estado' => 'Pendiente',
             ]);
 
@@ -185,7 +207,7 @@ class VecinoApiController extends Controller
                 'success' => true,
                 'message' => '¡Alerta S.O.S. enviada a Portería! La ayuda está en camino.'
             ], 200);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return response()->json(['success' => false, 'message' => 'Error S.O.S.: ' . $e->getMessage()], 500);
         }
     }

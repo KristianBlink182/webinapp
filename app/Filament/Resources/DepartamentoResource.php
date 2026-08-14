@@ -27,7 +27,7 @@ class DepartamentoResource extends Resource
     {
         return $form->schema([
             Forms\Components\Hidden::make('condominio_id')
-                ->default(fn () => \Filament\Facades\Filament::getTenant()?->id ?? auth()->user()->condominio_id),
+                ->default(fn () => \Filament\Facades\Filament::getTenant()?->id ?? auth()->user()->condominio_id ?? 1),
 
             Forms\Components\Section::make('Ubicación y Participación')
                 ->schema([
@@ -35,7 +35,14 @@ class DepartamentoResource extends Resource
                         ->label('Número de Dpto / Casa')
                         ->placeholder('Ej: 101, 202, 1001')
                         ->required()
-                        ->numeric()
+                        // REGLA STRICTA: PROHIBIR DUPLICAR EL MISMO DEPARTAMENTO EN EL EDIFICIO
+                        ->unique('departamentos', 'numero', ignoreRecord: true, modifyRuleUsing: function ($rule) {
+                            $condoId = \Filament\Facades\Filament::getTenant()?->id ?? auth()->user()->condominio_id ?? 1;
+                            return $rule->where('condominio_id', $condoId);
+                        })
+                        ->validationMessages([
+                            'unique' => 'El número de departamento o casa ya existe en este edificio.',
+                        ])
                         ->afterStateUpdated(function ($state, callable $set) {
                             if (!empty($state) && is_numeric($state)) {
                                 $pisoCalculado = (int) ($state / 100);
@@ -59,7 +66,7 @@ class DepartamentoResource extends Resource
                         ->required(),
 
                     Forms\Components\TextInput::make('estacionamiento')
-                        ->label('N° de Estacionamiento / Cochera')
+                        ->label('Estacionamiento / Cochera')
                         ->placeholder('Ej: Cochera 12'),
                 ])->columns(2),
 
@@ -72,9 +79,8 @@ class DepartamentoResource extends Resource
                         ->placeholder('Ej: Carlos Alberto Benavides'),
 
                     Forms\Components\TextInput::make('telefono_propietario')
-                        ->label('Celular / WhatsApp del Propietario')
+                        ->label('Celular / Whatsapp del Propietario')
                         ->tel()
-                        ->required()
                         ->placeholder('+51 987654321'),
 
                     Forms\Components\TextInput::make('email_propietario')
@@ -84,11 +90,11 @@ class DepartamentoResource extends Resource
                     Forms\Components\Select::make('condicion')
                         ->label('Estado de Ocupación')
                         ->options([
-                            'Propietario' => '🏡 Habita el Propietario',
-                            'Alquilado'   => '🏢 Alquilado a Inquilino',
-                            'Desocupado'  => '📦 Desocupado',
+                            'Habita el Propietario' => '🏠 Habita el Propietario',
+                            'Alquilado' => '🏢 Alquilado a Inquilino',
+                            'Desocupado' => '🚪 Desocupado',
                         ])
-                        ->default('Propietario')
+                        ->default('Habita el Propietario')
                         ->required()
                         ->reactive(),
                 ])->columns(2),
@@ -124,7 +130,7 @@ class DepartamentoResource extends Resource
 
                     Forms\Components\Placeholder::make('info_login')
                         ->label('Credenciales del Vecino')
-                        ->content(fn ($record) => empty($record?->email_propietario) 
+                        ->content(fn ($record) => empty($record?->email_propietario)
                             ? new HtmlString('Ingrese el correo electrónico en la sección anterior.')
                             : new HtmlString('El usuario ingresará con el correo <strong>' . $record->email_propietario . '</strong>.')),
                 ])->columns(2),
@@ -156,10 +162,10 @@ class DepartamentoResource extends Resource
                 Tables\Columns\TextColumn::make('condicion')
                     ->label('Estado')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'Propietario' => 'success',
-                        'Alquilado'   => 'warning',
-                        default       => 'gray',
+                    ->color(fn (string $state = null): string => match ($state ?? '') {
+                        'Habita el Propietario' => 'success',
+                        'Alquilado' => 'warning',
+                        default => 'gray',
                     }),
 
                 Tables\Columns\TextColumn::make('nombre_inquilino')
@@ -176,9 +182,9 @@ class DepartamentoResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListDepartamentos::route('/'),
+            'index' => Pages\ListDepartamentos::route('/'),
             'create' => Pages\CreateDepartamento::route('/create'),
-            'edit'   => Pages\EditDepartamento::route('/{record}/edit'),
+            'edit' => Pages\EditDepartamento::route('/{record}/edit'),
         ];
     }
 }

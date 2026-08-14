@@ -135,10 +135,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  void _abrirSiriShortcut() async {
-    final Uri url = Uri.parse("https://www.icloud.com/shortcuts/851684fa88d9489a8c12a7776f8eabf2");
+ void _abrirSiriShortcut() async {
+    final Uri url = Uri.parse("https://www.icloud.com/shortcuts/78a5e3d7a8bf4e8ea21051fa692c1eb6");
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Abre la app Atajos en tu iPhone para configurar Siri.')),
+      );
     }
   }
 
