@@ -365,12 +365,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
               _buildServiceCard('Avisos', 'Comunicados', Icons.campaign, const Color(0xFF10B981), () {
                 setState(() => _currentIndex = 4);
               }),
-              _buildServiceCard('Mascotas', 'Padrón de mascotas', Icons.pets, const Color(0xFFF59E0B), () {
-                _abrirPantalla(MascotasScreen(token: widget.token));
-              }),
-              _buildServiceCard('Reclamos', 'Sugerencias', Icons.chat_bubble_outline, const Color(0xFF8B5CF6), () {
-                _abrirPantalla(ReclamosScreen(token: widget.token));
-              }),
+             _buildServiceCard('Mascotas', 'Padrón de mascotas', Icons.pets, const Color(0xFFF59E0B), () {
+  _abrirPantalla(MascotasListScreen(token: widget.token));
+}),
+_buildServiceCard('Reclamos', 'Sugerencias', Icons.chat_bubble_outline, const Color(0xFF8B5CF6), () {
+  _abrirPantalla(ReclamosListScreen(token: widget.token));
+}),
             ],
           ),
         ],
