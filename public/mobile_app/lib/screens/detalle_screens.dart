@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../api_service.dart';
 
@@ -852,4 +854,21 @@ class _AreasComunesListScreenState extends State<AreasComunesListScreen> {
       ),
     );
   }
+}
+Widget _buildVacio(String titulo, String desc) {
+  return Center(
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Icon(Icons.info_outline, color: Colors.white38, size: 48),
+        const SizedBox(height: 12),
+        Text(titulo, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 4),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Text(desc, style: const TextStyle(color: Colors.white54, fontSize: 13), textAlign: TextAlign.center),
+        ),
+      ],
+    ),
+  );
 }

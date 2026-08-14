@@ -1,4 +1,4 @@
-import 'dart:convert';
+import 'dart0:convert';
 import 'package:http/http.dart' as http;
 import 'api_config.dart';
 
@@ -73,7 +73,17 @@ class ApiService {
     }
   }
 
-  // 6. COMUNICADOS
+  // 6. ÁREAS COMUNES
+  static Future<Map<String, dynamic>> getAreasComunes(String token) async {
+    try {
+      final res = await http.get(Uri.parse('$base/vecino/areas-comunes'), headers: _headers(token));
+      return jsonDecode(res.body);
+    } catch (e) {
+      return {'success': false};
+    }
+  }
+
+  // 7. COMUNICADOS
   static Future<Map<String, dynamic>> getComunicados(String token) async {
     try {
       final res = await http.get(Uri.parse('$base/vecino/comunicados'), headers: _headers(token));
@@ -83,7 +93,7 @@ class ApiService {
     }
   }
 
-  // 7. MARKETPLACE
+  // 8. MARKETPLACE
   static Future<Map<String, dynamic>> getMarketplace(String token) async {
     try {
       final res = await http.get(Uri.parse('$base/vecino/marketplace'), headers: _headers(token));
@@ -106,7 +116,7 @@ class ApiService {
     }
   }
 
-  // 8. VOTACIONES
+  // 9. VOTACIONES
   static Future<Map<String, dynamic>> getVotaciones(String token) async {
     try {
       final res = await http.get(Uri.parse('$base/vecino/votaciones'), headers: _headers(token));
@@ -116,7 +126,7 @@ class ApiService {
     }
   }
 
-  // 9. DOCUMENTOS
+  // 10. DOCUMENTOS
   static Future<Map<String, dynamic>> getDocumentos(String token) async {
     try {
       final res = await http.get(Uri.parse('$base/vecino/documentos'), headers: _headers(token));
@@ -126,7 +136,7 @@ class ApiService {
     }
   }
 
-  // 10. MASCOTAS
+  // 11. MASCOTAS
   static Future<Map<String, dynamic>> getMascotas(String token) async {
     try {
       final res = await http.get(Uri.parse('$base/vecino/mascotas'), headers: _headers(token));
@@ -149,7 +159,7 @@ class ApiService {
     }
   }
 
-  // 11. RECLAMOS
+  // 12. RECLAMOS
   static Future<Map<String, dynamic>> getReclamos(String token) async {
     try {
       final res = await http.get(Uri.parse('$base/vecino/reclamos'), headers: _headers(token));
