@@ -624,44 +624,149 @@ class CamaraScreen extends StatelessWidget {
   }
 }
 
-// 9. ÁREAS COMUNES (CON SUBIDA DE VOUCHER)
+// 9. ÁREAS COMUNES CON DÍAS REALES Y SELECTOR DE FECHA
 class AreasComunesListScreen extends StatefulWidget {
   final String token;
   const AreasComunesListScreen({Key? key, required this.token}) : super(key: key);
-  @override _AreasComunesListScreenState createState() => _AreasComunesListScreenState();
+
+  @override
+  _AreasComunesListScreenState createState() => _AreasComunesListScreenState();
 }
 
 class _AreasComunesListScreenState extends State<AreasComunesListScreen> {
-  void _modalReservar(String nombreArea) {
+  List<dynamic> _areas = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarAreas();
+  }
+
+  void _cargarAreas() async {
+    final res = await ApiService.getAreasComunes(widget.token);
+    if (res['success'] == true) {
+      setState(() {
+        _areas = res['data'] ?? [];
+        _isLoading = false;
+      });
+    } else {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _modalReservar(dynamic area) {
+    DateTime? fechaReserva;
+    XFile? voucherImage;
+
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF0F172A),
-        title: Text('📅 Reservar $nombreArea', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Seleccione la fecha y turno deseado:', style: TextStyle(color: Colors.white70, fontSize: 13)),
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: () {},
-              icon: const Icon(Icons.camera_alt, color: Color(0xFFA855F7)),
-              label: const Text('📸 Adjuntar Comprobante de Pago', style: TextStyle(color: Color(0xFFA855F7))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setModalState) => AlertDialog(
+          backgroundColor: const Color(0xFF0F172A),
+          title: Text(
+            '📅 Reservar ${area['nombre'] ?? 'Área Común'}',
+            style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Costo de Reserva: ${area['precio_formateado'] ?? 'Gratuito'}',
+                  style: const TextStyle(color: Color(0xFF38BDF8), fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+                const SizedBox(height: 14),
+
+                const Text('1. Selecciona la Fecha del Evento:', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                const SizedBox(height: 6),
+
+                // BOTÓN SELECTOR DE FECHA (CALENDARIO)
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: DateTime.now().add(const Duration(days: 1)),
+                        firstDate: DateTime.now(),
+                        lastDate: DateTime.now().add(const Duration(days: 90)),
+                      );
+                      if (picked != null) {
+                        setModalState(() {
+                          fechaReserva = picked;
+                        });
+                      }
+                    },
+                    icon: const Icon(Icons.calendar_month, color: Color(0xFF38BDF8)),
+                    label: Text(
+                      fechaReserva == null
+                          ? '📅 Elegir Fecha de Reserva'
+                          : '📅 Fecha: ${fechaReserva!.day}/${fechaReserva!.month}/${fechaReserva!.year}',
+                      style: TextStyle(color: fechaReserva == null ? Colors.white54 : Colors.greenAccent, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 14),
+
+                const Text('2. Adjuntar Comprobante de Pago (Galería):', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                const SizedBox(height: 6),
+
+                // BOTÓN SUBIR VOUCHER
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      final picker = ImagePicker();
+                      final picked = await picker.pickImage(source: ImageSource.gallery);
+                      if (picked != null) {
+                        setModalState(() {
+                          voucherImage = picked;
+                        });
+                      }
+                    },
+                    icon: const Icon(Icons.photo_library, size: 18),
+                    label: Text(voucherImage == null ? '📷 SUBIR COMPROBANTE' : '✔ Comprobante Adjuntado'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: voucherImage == null ? const Color(0xFF334155) : Colors.green,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar', style: TextStyle(color: Colors.white54)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0284C7)),
+              onPressed: () {
+                if (fechaReserva == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(backgroundColor: Colors.orange, content: Text('Por favor elige la fecha de reserva.')),
+                  );
+                  return;
+                }
+
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    backgroundColor: Colors.green,
+                    content: Text('Solicitud de reserva enviada para el ${fechaReserva!.day}/${fechaReserva!.month}/${fechaReserva!.year}.'),
+                  ),
+                );
+              },
+              child: const Text('Confirmar Reserva', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             ),
           ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar', style: TextStyle(color: Colors.white54))),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFA855F7)),
-            onPressed: () {
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(backgroundColor: Colors.green, content: Text('Solicitud de reserva enviada a la administración.')));
-            },
-            child: const Text('Confirmar Reserva'),
-          )
-        ],
       ),
     );
   }
@@ -670,63 +775,81 @@ class _AreasComunesListScreenState extends State<AreasComunesListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF060913),
-      appBar: AppBar(backgroundColor: const Color(0xFF060913), title: const Text('Reserva de Áreas Comunes')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _buildAreaCard('Zona de Parrillas', 'Disponible para eventos familiares.', 'S/ 50.00'),
-          const SizedBox(height: 12),
-          _buildAreaCard('Salón de Usos Múltiples (SUM)', 'Capacidad para 40 personas.', 'S/ 100.00'),
-          const SizedBox(height: 12),
-          _buildAreaCard('Gimnasio del Edificio', 'Acceso libre para residentes.', 'Gratuito'),
-        ],
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF0F172A),
+        elevation: 0,
+        title: const Text('Reserva de Áreas Comunes', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF0284C7)))
+          : _areas.isEmpty
+              ? _buildVacio('Áreas Comunes', 'No hay áreas comunes configuradas para este edificio.')
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _areas.length,
+                  itemBuilder: (context, index) {
+                    final item = _areas[index];
+                    return _buildAreaCard(item);
+                  },
+                ),
     );
   }
 
-  Widget _buildAreaCard(String nombre, String desc, String precio) {
+  Widget _buildAreaCard(dynamic item) {
     return Container(
+      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: const Color(0xFF0F172A), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white10)),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F172A),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white12),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(nombre, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-              Text(precio, style: const TextStyle(color: Color(0xFFA855F7), fontWeight: FontWeight.bold, fontSize: 14)),
+              Text(item['nombre'] ?? 'Área Común', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+              Text(item['precio_formateado'] ?? 'Gratuito', style: const TextStyle(color: Color(0xFF8B5CF6), fontWeight: FontWeight.bold, fontSize: 14)),
             ],
           ),
           const SizedBox(height: 6),
-          Text(desc, style: const TextStyle(color: Colors.white70, fontSize: 13)),
-          const SizedBox(height: 16),
+          Text(item['descripcion'] ?? '', style: const TextStyle(color: Colors.white70, fontSize: 13)),
+          const SizedBox(height: 14),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: () => _modalReservar(nombre),
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFA855F7)),
-              icon: const Icon(Icons.calendar_month, color: Colors.white, size: 18),
-              label: const Text('📅 Reservar Espacio', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              onPressed: () => _modalReservar(item),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF8B5CF6),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              icon: const Icon(Icons.calendar_month, size: 18),
+              label: const Text('📅 Reservar Espacio', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
-          )
+          ),
         ],
       ),
     );
   }
-}
 
-Widget _buildVacio(String titulo, String desc) {
-  return Center(
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Icon(Icons.info_outline, color: Colors.white38, size: 48),
-        const SizedBox(height: 12),
-        Text(titulo, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 6),
-        Text(desc, style: const TextStyle(color: Colors.white54, fontSize: 13)),
-      ],
-    ),
-  );
+  Widget _buildVacio(String titulo, String desc) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.info_outline, color: Colors.white38, size: 48),
+          const SizedBox(height: 12),
+          Text(titulo, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 4),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Text(desc, style: const TextStyle(color: Colors.white54, fontSize: 13), textAlign: TextAlign.center),
+          ),
+        ],
+      ),
+    );
+  }
 }

@@ -250,24 +250,29 @@ class VecinoApiController extends Controller
         }
     }
 
-    /** 5. ÁREAS COMUNES */
+    /** 5. ÁREAS COMUNES REALES DEL EDIFICIO */
     public function areasComunes(Request $request)
     {
-        $user = $request->user();
-        $condoId = $user->departamento?->condominio_id ?? 1;
+        try {
+            $user = $request->user();
+            $dpto = $user?->departamento ?? \App\Models\Departamento::find($user?->departamento_id ?? 1);
+            $condoId = $dpto?->condominio_id ?? $user?->condominio_id ?? 1;
 
-        $areas = AreaComun::where('condominio_id', $condoId)->get()->map(function ($a) {
-            return [
-                'id'          => $a->id,
-                'nombre'      => $a->nombre ?? 'Área Común',
-                'descripcion' => $a->descripcion ?? 'Parrillas, SUM, Gimnasio',
-                'capacidad'   => $a->capacidad ?? '10 personas',
-                'costo'       => 'S/ ' . number_format((float)($a->costo_reserva ?? 0), 2),
-                'estado'      => $a->estado ?? 'Disponible',
-            ];
-        });
+            $areas = AreaComun::where('condominio_id', $condoId)->get()->map(function ($a) {
+                $costo = (float)($a->costo ?? $a->precio ?? 0);
+                return [
+                    'id' => $a->id,
+                    'nombre' => $a->nombre ?? $a->nombre_area ?? 'Área Común',
+                    'descripcion' => $a->descripcion ?? $a->reglas ?? 'Disponible para eventos de residentes.',
+                    'precio' => $costo,
+                    'precio_formateado' => $costo > 0 ? ('S/ ' . number_format($costo, 2, '.', ',')) : 'Gratuito',
+                ];
+            });
 
-        return response()->json(['success' => true, 'data' => $areas], 200);
+            return response()->json(['success' => true, 'data' => $areas]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'data' => []]);
+        }
     }
 
     /** 6. CÁMARA EN VIVO */
