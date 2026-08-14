@@ -10,6 +10,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\HtmlString;
 
 class PagoResource extends Resource
 {
@@ -19,6 +20,7 @@ class PagoResource extends Resource
 
     protected static ?string $navigationGroup = 'Finanzas';
     protected static ?string $navigationLabel = 'Cobros y Recibos';
+    protected static ?string $modelLabel = 'Cobro y Recibo';
     protected static ?string $pluralModelLabel = 'Gestión de Cobros y Recibos';
     protected static ?string $navigationIcon = 'heroicon-o-banknotes';
 
@@ -42,9 +44,11 @@ class PagoResource extends Resource
             Forms\Components\Section::make('Información del Recibo')
                 ->schema([
                     Forms\Components\Select::make('departamento_id')
-                        ->relationship('departamento', 'numero')
                         ->label('Departamento')
+                        ->relationship('departamento', 'numero')
                         ->searchable()
+                        ->preload()
+                        ->disabled(fn ($record) => strtolower($record?->estado ?? '') === 'pagado')
                         ->required(),
 
                     Forms\Components\Select::make('mes')
@@ -54,22 +58,25 @@ class PagoResource extends Resource
                             'Mayo' => 'Mayo', 'Junio' => 'Junio', 'Julio' => 'Julio', 'Agosto' => 'Agosto',
                             'Septiembre' => 'Septiembre', 'Octubre' => 'Octubre', 'Noviembre' => 'Noviembre', 'Diciembre' => 'Diciembre'
                         ])
+                        ->disabled(fn ($record) => strtolower($record?->estado ?? '') === 'pagado')
                         ->required(),
 
                     Forms\Components\TextInput::make('anio')
                         ->label('Año')
                         ->numeric()
                         ->default(date('Y'))
+                        ->disabled(fn ($record) => strtolower($record?->estado ?? '') === 'pagado')
                         ->required(),
                 ])->columns(3),
 
             Forms\Components\Section::make('Desglose de Conceptos (S/)')
-                ->description('Al ingresar los conceptos, el Total a Cobrar se calculará automáticamente.')
+                ->description('Montos financieros del recibo.')
                 ->schema([
                     Forms\Components\TextInput::make('monto_mantenimiento')
                         ->label('Cuota Mantenimiento S/')
                         ->numeric()
                         ->default(0)
+                        ->disabled(fn ($record) => strtolower($record?->estado ?? '') === 'pagado')
                         ->reactive()
                         ->afterStateUpdated(fn ($state, callable $set, callable $get) => self::recalcularTotal($set, $get)),
 
@@ -77,6 +84,7 @@ class PagoResource extends Resource
                         ->label('Servicios Generales (Luz) S/')
                         ->numeric()
                         ->default(0)
+                        ->disabled(fn ($record) => strtolower($record?->estado ?? '') === 'pagado')
                         ->reactive()
                         ->afterStateUpdated(fn ($state, callable $set, callable $get) => self::recalcularTotal($set, $get)),
 
@@ -84,6 +92,7 @@ class PagoResource extends Resource
                         ->label('Consumo Agua S/')
                         ->numeric()
                         ->default(0)
+                        ->disabled(fn ($record) => strtolower($record?->estado ?? '') === 'pagado')
                         ->reactive()
                         ->afterStateUpdated(fn ($state, callable $set, callable $get) => self::recalcularTotal($set, $get)),
 
@@ -91,6 +100,7 @@ class PagoResource extends Resource
                         ->label('Mora / Multas S/')
                         ->numeric()
                         ->default(0)
+                        ->disabled(fn ($record) => strtolower($record?->estado ?? '') === 'pagado')
                         ->reactive()
                         ->afterStateUpdated(fn ($state, callable $set, callable $get) => self::recalcularTotal($set, $get)),
 
@@ -98,6 +108,7 @@ class PagoResource extends Resource
                         ->label('Deuda Pendiente S/')
                         ->numeric()
                         ->default(0)
+                        ->disabled(fn ($record) => strtolower($record?->estado ?? '') === 'pagado')
                         ->reactive()
                         ->afterStateUpdated(fn ($state, callable $set, callable $get) => self::recalcularTotal($set, $get)),
 
@@ -105,6 +116,7 @@ class PagoResource extends Resource
                         ->label('TOTAL A COBRAR S/')
                         ->prefix('S/')
                         ->numeric()
+                        ->disabled(fn ($record) => strtolower($record?->estado ?? '') === 'pagado')
                         ->required(),
                 ])->columns(3),
 
@@ -112,8 +124,9 @@ class PagoResource extends Resource
                 ->schema([
                     Forms\Components\Select::make('estado')
                         ->options([
-                            'Pendiente' => '🔴 Pendiente de Pago',
-                            'Pagado'    => '🟢 Pagado / Aprobado',
+                            'Pendiente' => '⏱ Pendiente de Pago',
+                            'en_revision' => '🟡 Validando Pago',
+                            'Pagado' => '🟢 Pagado / Aprobado',
                         ])
                         ->default('Pendiente')
                         ->required(),
@@ -122,11 +135,30 @@ class PagoResource extends Resource
                         ->label('Fecha de Cobro Confirmado')
                         ->default(now()),
 
-                    Forms\Components\FileUpload::make('voucher')
+                    Forms\Components\Placeholder::make('voucher_preview')
                         ->label('Comprobante Adjunto (Voucher)')
-                        ->image()
-                        ->disk('public')
-                        ->directory('vouchers'),
+                        ->content(function ($record) {
+                            $filePath = $record?->voucher ?? $record?->comprobante_pago ?? $record?->comprobante;
+
+                            if (empty($filePath)) {
+                                return new HtmlString('<div class="p-3 bg-slate-800 text-slate-400 rounded-lg text-xs">Sin comprobante adjunto aún.</div>');
+                            }
+
+                            $url = asset('storage/' . ltrim($filePath, '/'));
+
+                            return new HtmlString('
+                                <div class="p-3 bg-slate-900 rounded-xl border border-slate-700/60 space-y-2 text-center">
+                                    <a href="' . $url . '" target="_blank" class="inline-block overflow-hidden rounded-lg border border-slate-700 hover:opacity-90 transition">
+                                        <img src="' . $url . '" alt="Voucher de Pago" class="max-h-36 object-contain mx-auto rounded-lg shadow" />
+                                    </a>
+                                    <div>
+                                        <a href="' . $url . '" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs rounded-lg transition shadow">
+                                            🔍 Abrir Imagen a Pantalla Completa
+                                        </a>
+                                    </div>
+                                </div>
+                            ');
+                        }),
                 ])->columns(3),
         ]);
     }
@@ -148,76 +180,163 @@ class PagoResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('departamento.numero')
-                    ->label('Dpto')
+                    ->label('DPTO')
                     ->weight('bold')
                     ->sortable()
                     ->searchable(),
 
-                // 🎯 CONCEPTO DINÁMICO (SI ES NULL MUESTRA MES Y AÑO)
+                // CONCEPTO FAIL-PROOF GARANTIZADO
                 Tables\Columns\TextColumn::make('concepto')
-                    ->label('Periodo / Concepto')
+                    ->label('PERIODO / CONCEPTO')
                     ->searchable()
-                    ->state(function ($record) {
-                        if (!empty($record->concepto)) {
-                            return $record->concepto;
-                        }
-                        $mes = $record->mes ?? 'Mes Actual';
+                    ->getStateUsing(function ($record) {
+                        $concepto = $record->concepto;
+                        $mes = $record->mes;
                         $anio = $record->anio ?? date('Y');
-                        return 'Cuota de Mantenimiento - ' . $mes . ' ' . $anio;
+
+                        if (!empty($concepto)) {
+                            return $concepto;
+                        }
+
+                        if (!empty($mes)) {
+                            return "Cuota de Mantenimiento - {$mes} {$anio}";
+                        }
+
+                        return "Cuota de Mantenimiento - Enero {$anio}";
                     }),
 
                 Tables\Columns\TextColumn::make('monto')
-                    ->label('Monto Total')
+                    ->label('MONTO TOTAL')
                     ->money('PEN')
                     ->weight('bold')
                     ->color('primary'),
 
                 Tables\Columns\TextColumn::make('estado')
-                    ->label('Estado')
+                    ->label('ESTADO')
                     ->badge()
                     ->color(fn (string $state = null): string => match (strtolower($state ?? '')) {
                         'pagado', 'aprobado' => 'success',
-                        'pendiente'         => 'danger',
-                        default             => 'gray',
+                        'en_revision', 'en revision', 'validando' => 'warning',
+                        'pendiente' => 'danger',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn (string $state = null): string => match (strtolower($state ?? '')) {
+                        'pagado', 'aprobado' => 'Pagado',
+                        'en_revision', 'en revision', 'validando' => 'Validando Pago',
+                        default => 'Pendiente',
                     }),
 
-                Tables\Columns\ImageColumn::make('voucher')
-                    ->label('Voucher')
-                    ->disk('public')
-                    ->placeholder('Efectivo / Sin foto'),
+                // MINIATURA CUADRADA IMPERMEABLE A ESTILOS DE TABLA
+                Tables\Columns\TextColumn::make('voucher')
+                    ->label('VOUCHER')
+                    ->html()
+                    ->getStateUsing(function ($record) {
+                        $filePath = $record->voucher ?? $record->comprobante_pago ?? $record->comprobante;
+
+                        if (empty($filePath)) {
+                            return new HtmlString('<span class="text-xs text-slate-500">Sin foto</span>');
+                        }
+
+                        $url = asset('storage/' . ltrim($filePath, '/'));
+
+                        return new HtmlString('
+                            <a href="' . $url . '" target="_blank" style="display: inline-block !important; width: 40px !important; height: 40px !important; min-width: 40px !important; min-height: 40px !important; overflow: hidden !important; border-radius: 8px !important; border: 1px solid #334155 !important; background-color: #0f172a !important;">
+                                <img src="' . $url . '" style="width: 40px !important; height: 40px !important; object-fit: cover !important; display: block !important; border-radius: 8px !important;" error="this.src=\'https://via.placeholder.com/40?text=Vouch\'" />
+                            </a>
+                        ');
+                    }),
             ])
             ->defaultSort('created_at', 'desc')
             ->actions([
                 Tables\Actions\Action::make('aprobarPago')
-    ->label(fn (Pago $record) => !empty($record->voucher) ? 'Aprobar Pago' : 'Esperando Pago')
-    ->icon(fn (Pago $record) => !empty($record->voucher) ? 'heroicon-m-check-circle' : 'heroicon-m-clock')
-    ->color(fn (Pago $record) => !empty($record->voucher) ? 'success' : 'gray')
-    ->button()
-    ->disabled(fn (Pago $record) => empty($record->voucher))
-    ->visible(fn (Pago $record) => strtolower($record->estado ?? '') !== 'pagado')
-    ->action(function (Pago $record) {
-        $record->update([
-            'estado' => 'Pagado',
-            'fecha_pago' => now('America/Lima'),
-        ]);
+                    ->label(fn (Pago $record) => in_array(strtolower($record->estado ?? ''), ['en_revision', 'en revision', 'validando']) ? 'Validar Pago' : 'Aprobar Pago')
+                    ->icon(fn (Pago $record) => !empty($record->voucher) || !empty($record->comprobante_pago) ? 'heroicon-m-check-circle' : 'heroicon-m-clock')
+                    ->color(fn (Pago $record) => in_array(strtolower($record->estado ?? ''), ['en_revision', 'en revision', 'validando']) ? 'success' : 'gray')
+                    ->button()
+                    ->modalHeading(fn (Pago $record) => '🔍 Auditoría de Comprobante - Dpto. ' . ($record->departamento->numero ?? ''))
+                    ->modalSubmitActionLabel('🟢 Confirmar y Aprobar Pago')
+                    ->visible(fn (Pago $record) => strtolower($record->estado ?? '') !== 'pagado')
+                    ->form(function (Pago $record) {
+                        $filePath = $record->voucher ?? $record->comprobante_pago ?? $record->comprobante;
+                        $url = !empty($filePath) ? asset('storage/' . ltrim($filePath, '/')) : null;
 
-        Notification::make()
-            ->title('Pago Aprobado')
-            ->body("Se ha verificado el pago del Dpto. {$record->departamento?->numero}.")
-            ->success()
-            ->send();
-    }),
+                        return [
+                            Forms\Components\Placeholder::make('voucher_modal_preview')
+                                ->label('')
+                                ->content(function () use ($url, $record) {
+                                    $montoFmt = number_format((float)($record->monto ?? 0), 2, '.', ',');
 
-                Tables\Actions\EditAction::make(),
+                                    $htmlImg = $url 
+                                        ? '<a href="' . $url . '" target="_blank" class="inline-block overflow-hidden rounded-lg border border-slate-700 hover:opacity-90 transition">
+                                            <img src="' . $url . '" alt="Voucher" class="max-h-36 object-contain mx-auto rounded-lg shadow-md" />
+                                           </a>
+                                           <div>
+                                               <a href="' . $url . '" target="_blank" class="inline-flex items-center gap-1 px-3 py-1 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs rounded-lg transition shadow">
+                                                   🔍 Ver Imagen Completa en Pestaña Nueva
+                                               </a>
+                                           </div>'
+                                        : '<div class="p-2 bg-amber-500/20 text-amber-300 rounded-lg text-xs">⚠️ Sin archivo adjunto.</div>';
+
+                                    return new HtmlString('
+                                        <div class="p-4 bg-slate-900 rounded-xl border border-slate-700 space-y-3">
+                                            <div class="grid grid-cols-2 gap-2 p-3 bg-slate-800/80 rounded-lg text-xs text-slate-200">
+                                                <div><b>Departamento:</b> Dpto. ' . e($record->departamento->numero ?? 'N/E') . '</div>
+                                                <div><b>Periodo:</b> ' . e($record->mes ?? '') . ' ' . e($record->anio ?? '') . '</div>
+                                                <div><b>Monto Total:</b> <span class="text-emerald-400 font-bold">S/ ' . $montoFmt . '</span></div>
+                                                <div><b>Método:</b> Yape / Transferencia</div>
+                                            </div>
+                                            <div class="text-center space-y-2">
+                                                ' . $htmlImg . '
+                                            </div>
+                                        </div>
+                                    ');
+                                }),
+                        ];
+                    })
+                    ->action(function (Pago $record) {
+                        $record->update([
+                            'estado' => 'Pagado',
+                            'fecha_pago' => now(),
+                        ]);
+
+                        \Filament\Notifications\Notification::make()
+                            ->title('Pago Aprobado')
+                            ->body("Se ha verificado y aprobado el pago del Dpto. {$record->departamento->numero}.")
+                            ->success()
+                            ->send();
+                    })
+                    ->extraModalFooterActions([
+                        Tables\Actions\Action::make('rechazarPago')
+                            ->label('🔴 Rechazar Voucher Invalido')
+                            ->color('danger')
+                            ->button()
+                            ->action(function (Pago $record) {
+                                $record->update([
+                                    'estado' => 'Pendiente',
+                                    'voucher' => null,
+                                    'comprobante_pago' => null,
+                                    'comprobante' => null,
+                                ]);
+
+                                \Filament\Notifications\Notification::make()
+                                    ->title('Comprobante Rechazado')
+                                    ->body("Se ha rechazado el voucher del Dpto. {$record->departamento->numero}. El recibo volvió a estado Pendiente.")
+                                    ->warning()
+                                    ->send();
+                            }),
+                    ]),
+
+                Tables\Actions\EditAction::make()
+                    ->visible(fn (Pago $record) => strtolower($record->estado ?? '') !== 'pagado'),
             ]);
     }
 
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListPagos::route('/'),
+            'index' => Pages\ListPagos::route('/'),
             'create' => Pages\CreatePago::route('/create'),
-            'edit'   => Pages\EditPago::route('/{record}/edit'),
+            'edit' => Pages\EditPago::route('/{record}/edit'),
         ];
     }
 }

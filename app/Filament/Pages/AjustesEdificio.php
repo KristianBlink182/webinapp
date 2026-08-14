@@ -25,7 +25,7 @@ class AjustesEdificio extends Page implements Forms\Contracts\HasForms
     public function mount(): void
     {
         $tenant = \Filament\Facades\Filament::getTenant();
-        $condo = $tenant ?? Condominio::find(auth()->user()->condominio_id);
+        $condo = $tenant ?? Condominio::find(auth()->user()->condominio_id ?? 1);
 
         if ($condo) {
             $this->form->fill($condo->toArray());
@@ -58,12 +58,12 @@ class AjustesEdificio extends Page implements Forms\Contracts\HasForms
                             ->maxSize(5120),
                     ])->columns(2),
 
-                Forms\Components\Section::make('Camara de Seguridad de la Puerta Principal')
-                    ->description('Ingrese la URL de transmision en vivo o enlace de la camara para que los vecinos la vean desde su App.')
+                Forms\Components\Section::make('Cámara de Seguridad de la Puerta Principal')
+                    ->description('Ingrese la URL de transmisión en vivo o enlace de la cámara para que los vecinos la vean desde su App.')
                     ->schema([
                         Forms\Components\TextInput::make('url_camara_principal')
-                            ->label('Enlace / URL de la Camara en Vivo')
-                            ->placeholder('Ej: https://www.youtube.com/watch?v=... o link de la camara')
+                            ->label('Enlace / URL de la Cámara en Vivo')
+                            ->placeholder('Ej: https://www.youtube.com/watch?v=... o enlace de la cámara')
                             ->columnSpanFull(),
                     ]),
             ])
@@ -72,11 +72,21 @@ class AjustesEdificio extends Page implements Forms\Contracts\HasForms
 
     public function submit(): void
     {
+        $data = $this->form->getState();
+
+        // Convertir arrays de subida FileUpload a texto simple (string) para MySQL
+        if (isset($data['logo']) && is_array($data['logo'])) {
+            $data['logo'] = reset($data['logo']) ?: null;
+        }
+        if (isset($data['logo_claro']) && is_array($data['logo_claro'])) {
+            $data['logo_claro'] = reset($data['logo_claro']) ?: null;
+        }
+
         $tenant = \Filament\Facades\Filament::getTenant();
-        $condo = $tenant ?? Condominio::find(auth()->user()->condominio_id);
+        $condo = $tenant ?? Condominio::find(auth()->user()->condominio_id ?? 1);
 
         if ($condo) {
-            $condo->update($this->form->getState());
+            $condo->update($data);
 
             Notification::make()
                 ->title('Ajustes Guardados')

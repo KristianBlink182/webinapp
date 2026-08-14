@@ -101,25 +101,30 @@ class VecinoApiController extends Controller
         }
     }
 
-    /** DESCARGAR O VER RECIBO PDF (SIN ERROR DE RELACIÓN) */
+  /** DESCARGAR O VER RECIBO PDF */
     public function descargarPdf($id)
     {
         try {
-            $pago = Pago::find($id);
+            $pago = Pago::with(['departamento'])->find($id);
 
             if (!$pago) {
                 return response()->json(['error' => 'Recibo no encontrado'], 404);
             }
 
-            if (view()->exists('vendor.filament-panels.recibo')) {
-                if (class_exists('\Barryvdh\DomPDF\Facade\Pdf')) {
-                    $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('vendor.filament-panels.recibo', ['pago' => $pago]);
-                    return $pdf->stream("recibo-{$pago->id}.pdf");
-                }
-                return view('vendor.filament-panels.recibo', ['pago' => $pago]);
+            if (class_exists('\Barryvdh\DomPDF\Facade\Pdf')) {
+                $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('recibo', ['pago' => $pago, 'record' => $pago]);
+                return $pdf->stream("recibo-{$pago->id}.pdf");
             }
 
-            return response()->json(['message' => 'Vista de recibo no configurada'], 404);
+            if (view()->exists('recibo')) {
+                return response(view('recibo', ['pago' => $pago, 'record' => $pago]))->header('Content-Type', 'text/html');
+            }
+
+            if (view()->exists('vendor.filament-panels.recibo')) {
+                return response(view('vendor.filament-panels.recibo', ['pago' => $pago, 'record' => $pago]))->header('Content-Type', 'text/html');
+            }
+
+            return response()->json(['error' => 'Vista de recibo no configurada'], 404);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Error al generar recibo: ' . $e->getMessage()], 500);
         }

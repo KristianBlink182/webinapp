@@ -2,14 +2,15 @@
 
 namespace App\Filament\Vecino\Resources;
 
+use App\Filament\Vecino\Resources\PagoResource\Pages;
 use App\Models\Pago;
+use App\Models\Banco;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Notifications\Notification;
-use App\Filament\Vecino\Resources\PagoResource\Pages;
+use Illuminate\Support\HtmlString;
 
 class PagoResource extends Resource
 {
@@ -17,16 +18,17 @@ class PagoResource extends Resource
 
     protected static bool $isScopedToTenant = false;
 
-    protected static ?string $navigationGroup = 'Finanzas';
     protected static ?string $navigationIcon = 'heroicon-o-credit-card';
     protected static ?string $navigationLabel = 'Mis Pagos y Recibos';
+    protected static ?string $modelLabel = 'Pago y Recibo';
     protected static ?string $pluralModelLabel = 'Mis Pagos y Recibos';
     protected static ?int $navigationSort = 1;
 
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
+        $user = auth()->user();
         return parent::getEloquentQuery()
-            ->where('departamento_id', auth()->user()->departamento_id);
+            ->where('departamento_id', $user->departamento_id ?? 1);
     }
 
     public static function table(Table $table): Table
@@ -35,118 +37,143 @@ class PagoResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('concepto')
                     ->label('CONCEPTO')
-                    ->weight('bold')
-                    ->state(function ($record) {
-                        if (!empty($record->concepto)) {
-                            return $record->concepto;
+                    ->default('Cuota de Mantenimiento')
+                    ->formatStateUsing(function ($state, $record) {
+                        $base = !empty($state) ? $state : ($record->concepto ?? 'Cuota de Mantenimiento');
+                        $mes = $record->mes ?? 'Febrero 2026';
+                        if (str_contains($base, $mes)) {
+                            return $base;
                         }
-                        $mes = $record->mes ?? 'Mes Actual';
-                        $anio = $record->anio ?? date('Y');
-                        return 'Cuota de Mantenimiento - ' . $mes . ' ' . $anio;
+                        return "{$base} - {$mes}";
                     }),
 
                 Tables\Columns\TextColumn::make('monto')
                     ->label('MONTO TOTAL')
                     ->money('PEN')
-                    ->weight('bold')
-                    ->color('primary'),
+                    ->weight('bold'),
 
                 Tables\Columns\TextColumn::make('fecha_vencimiento')
-                    ->label('FECHA VENCIMIENTO')
+                    ->label('VENCIMIENTO')
                     ->default('12 de cada mes'),
 
                 Tables\Columns\TextColumn::make('estado')
                     ->label('ESTADO')
                     ->badge()
-                    ->color(fn (string $state = null): string => match (strtolower($state ?? '')) {
-                        'pagado', 'aprobado' => 'success',
-                        'en revisión', 'en revision', 'procesando' => 'warning',
-                        'pendiente' => 'danger',
-                        default => 'gray',
+                    ->color(fn ($state): string => match (strtolower($state ?? '')) {
+                        'pagado', 'al dia', 'aprobado' => 'success',
+                        'en revision', 'en_revision', 'procesando', 'validando' => 'warning',
+                        default => 'danger',
                     })
-                    ->formatStateUsing(fn ($state) => match (strtolower($state ?? '')) {
-                        'pagado', 'aprobado' => 'Pagado',
-                        'en revisión', 'en revision', 'procesando' => 'Validando Pago',
+                    ->formatStateUsing(fn ($state): string => match (strtolower($state ?? '')) {
+                        'pagado', 'al dia', 'aprobado' => 'Pagado',
+                        'en revision', 'en_revision', 'procesando' => 'Validando Pago',
                         default => 'Pendiente',
                     }),
             ])
             ->defaultSort('created_at', 'desc')
             ->actions([
-                Tables\Actions\Action::make('verPdf')
-                    ->label('📄 Ver Recibo PDF')
+                Tables\Actions\Action::make('pdf')
+                    ->label('Ver Recibo PDF')
                     ->icon('heroicon-m-document-text')
-                    ->color('info')
+                    ->color('primary')
                     ->button()
-                    ->url(fn (Pago $record): string => route('pago.pdf', $record))
+                    ->url(fn (Pago $record): string => url('/api/v1/vecino/pagos/' . $record->id . '/pdf'))
                     ->openUrlInNewTab(),
 
-               Tables\Actions\EditAction::make()
-    ->label(fn (Pago $record) => match (strtolower($record->estado ?? '')) {
-        'pagado', 'aprobado' => '🟢 Pagado',
-        'en revisión', 'en revision', 'procesando' => '🟡 Validando Pago',
-        default => '💳 Pagar Recibo',
-    })
-    ->icon(fn (Pago $record) => match (strtolower($record->estado ?? '')) {
-        'pagado', 'aprobado' => 'heroicon-m-check-badge',
-        'en revisión', 'en revision', 'procesando' => 'heroicon-m-clock',
-        default => 'heroicon-m-credit-card',
-    })
-    ->color(fn (Pago $record) => match (strtolower($record->estado ?? '')) {
-        'pagado', 'aprobado' => 'success',
-        'en revisión', 'en revision', 'procesando' => 'warning',
-        default => 'success',
-    })
-    ->modalHeading('Reportar Comprobante de Pago')
-    ->modalSubmitActionLabel('🚀 Enviar Pago')
-    ->disabled(fn (Pago $record) => in_array(strtolower($record->estado ?? ''), ['pagado', 'aprobado', 'en revisión', 'en revision', 'procesando']))
-    ->using(function (Pago $record, array $data): Pago {
-        $data['estado'] = 'En Revisión';
-        $record->update($data);
-        return $record;
-    })
-    ->after(function () {
-        Notification::make()
-            ->title('Comprobante Enviado')
-            ->body('Tu pago ha sido reportado con éxito. La administración validará el comprobante.')
-            ->success()
-            ->send();
-    })
-    ->button(),
-            ]);
-    }
+                Tables\Actions\Action::make('reportar')
+                    ->label('Pagar Recibo')
+                    ->button()
+                    ->color('success')
+                    ->icon('heroicon-m-credit-card')
+                    ->modalHeading('Reportar Comprobante de Pago')
+                    ->modalSubmitActionLabel('Enviar Pago')
+                    ->visible(fn (Pago $record) => !in_array(strtolower($record->estado ?? ''), ['pagado', 'aprobado', 'en revision', 'procesando']))
+                    ->action(function (array $data, Pago $record): void {
+                        $voucherPath = $data['voucher'] ?? null;
 
-    public static function form(Form $form): Form
-    {
-        return $form
-            ->schema([
-                Forms\Components\Section::make('Reportar Comprobante de Pago')
-                    ->description('Adjunta la foto o captura de tu Yape, Plin o transferencia bancaria.')
-                    ->schema([
+                        $record->update([
+                            'voucher' => $voucherPath,
+                            'comprobante_pago' => $voucherPath,
+                            'comprobante' => $voucherPath,
+                            'metodo_pago' => 'Yape / Transferencia',
+                            'estado' => 'en_revision',
+                        ]);
+
+                        \Filament\Notifications\Notification::make()
+                            ->title('Comprobante Enviado')
+                            ->body('Su pago ha sido reportado con éxito. La administración validará el comprobante.')
+                            ->success()
+                            ->send();
+                    })
+                    ->form([
+                        Forms\Components\Placeholder::make('cuentas_bancarias_info')
+                            ->label('🏦 Cuentas Bancarias Oficiales del Edificio')
+                            ->content(function () {
+                                $condoId = auth()->user()->condominio_id ?? 1;
+                                $bancos = Banco::where('condominio_id', $condoId)->get();
+
+                                if ($bancos->isEmpty()) {
+                                    return new HtmlString('<div class="p-3 bg-slate-800 text-amber-400 rounded-lg text-xs">Consulte con la administración las cuentas de depósito oficiales.</div>');
+                                }
+
+                                $html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 p-4 bg-slate-900/90 rounded-xl border border-slate-700/60">';
+                                foreach ($bancos as $banco) {
+                                    $isYapePlinOnly = ($banco->numero_cuenta === 'N/A' || empty($banco->numero_cuenta) || $banco->nombre_banco === 'Yape / Plin');
+
+                                    $html .= '<div class="p-3 bg-slate-800/80 rounded-lg border border-slate-700/40 text-xs text-slate-200 space-y-1">';
+
+                                    if ($isYapePlinOnly) {
+                                        $html .= '<div class="font-bold text-emerald-400 text-sm">📲 Yape / Plin (Billetera Digital)</div>';
+                                        if (!empty($banco->yape_plin_numero)) {
+                                            $html .= '<div class="text-white font-bold text-sm"><b>Número:</b> ' . e($banco->yape_plin_numero) . '</div>';
+                                        }
+                                        if (!empty($banco->yape_plin_titular ?? $banco->titular)) {
+                                            $html .= '<div><b>Titular:</b> ' . e($banco->yape_plin_titular ?? $banco->titular) . '</div>';
+                                        }
+                                    } else {
+                                        $html .= '<div class="font-bold text-sky-400 text-sm">🏦 ' . e($banco->nombre_banco) . ' (' . e($banco->tipo_cuenta ?? 'Corriente') . ')</div>';
+                                        $html .= '<div><b>Nº Cuenta:</b> ' . e($banco->numero_cuenta) . '</div>';
+                                        if (!empty($banco->cci) && $banco->cci !== 'N/A') {
+                                            $html .= '<div><b>CCI:</b> ' . e($banco->cci) . '</div>';
+                                        }
+                                        if (!empty($banco->titular)) {
+                                            $html .= '<div><b>Titular:</b> ' . e($banco->titular) . '</div>';
+                                        }
+                                        if ($banco->activo_yape_plin && !empty($banco->yape_plin_numero)) {
+                                            $html .= '<div class="text-emerald-400 font-bold mt-1">📲 Yape / Plin: ' . e($banco->yape_plin_numero) . '</div>';
+                                        }
+                                    }
+
+                                    $html .= '</div>';
+                                }
+                                $html .= '</div>';
+
+                                return new HtmlString($html);
+                            }),
+
                         Forms\Components\TextInput::make('concepto')
-    ->label('Concepto')
-    ->formatStateUsing(function ($state, Pago $record) {
-        if (!empty($state)) {
-            return $state;
-        }
-        $mes = $record->mes ?? 'Febrero';
-        $anio = $record->anio ?? date('Y');
-        return "Cuota de Mantenimiento - {$mes} {$anio}";
-    })
-    ->disabled()
-    ->dehydrated(),
+                            ->label('Concepto')
+                            ->disabled()
+                            ->default(function (Pago $record) {
+                                $base = !empty($record->concepto) ? $record->concepto : 'Cuota de Mantenimiento';
+                                $mes = $record->mes ?? 'Febrero 2026';
+                                if (str_contains($base, $mes)) {
+                                    return $base;
+                                }
+                                return "{$base} - {$mes}";
+                            }),
 
                         Forms\Components\TextInput::make('monto')
                             ->label('Monto (S/)')
                             ->prefix('S/')
-                            ->formatStateUsing(fn ($state) => number_format((float)$state, 2, '.', ''))
                             ->disabled()
-                            ->dehydrated(),
+                            ->default(fn (Pago $record) => number_format((float)($record->monto ?? 0), 2, '.', '')),
 
                         Forms\Components\FileUpload::make('voucher')
                             ->label('Imagen del Comprobante / Voucher')
-                            ->image()
                             ->disk('public')
                             ->directory('vouchers')
+                            ->image()
                             ->required(),
                     ]),
             ]);

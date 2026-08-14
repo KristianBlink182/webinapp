@@ -416,11 +416,11 @@ class ListPagos extends ListRecords
                                                             <th class='px-3 py-2 text-right'>Agua</th>
                                                             <th class='px-3 py-2 text-right font-bold'>Total Base</th>
                                                         </tr>
-                                                    </thead>
-                                                    <tbody class='bg-white dark:bg-slate-900'>
-                                                        {$filasTablaDptos}
-                                                    </tbody>
-                                                </table>
+                                                    </thead >
+<tbody class='bg-white dark:bg-slate-900'>
+" . $filasTablaDptos . "
+</tbody>
+</table>
                                             </div>
 
                                             <div class='mt-4 p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border-l-4 border-emerald-500 text-emerald-800 dark:text-emerald-300 text-xs font-medium'>

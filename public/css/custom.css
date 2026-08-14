@@ -403,3 +403,54 @@ html:not(.dark), html:not(.dark) body {
 .livo-ios-statusbar-spacer {
   display: none;
 }
+/* Ocultar logo duplicado de la barra superior */
+.fi-topbar-brand {
+    display: none !important;
+}
+
+/* Adaptabilidad de Modo Oscuro para Modal Wizard de Cuotas */
+.dark .fi-modal-content,
+.dark .fi-fo-wizard,
+.dark .fi-fo-wizard-step {
+    background-color: #0f172a !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.dark .fi-fo-wizard-step * {
+    color: #ffffff !important;
+}
+
+/* Corrección de tarjetas blancas en el Wizard del Modal en Modo Oscuro */
+.dark .fi-fo-wizard-step .bg-white,
+.dark .fi-fo-wizard-step [style*="background: white"],
+.dark .fi-fo-wizard-step [style*="background:#ffffff"],
+.dark .fi-fo-wizard-step [style*="background: #ffffff"],
+.dark .fi-modal-content .bg-white {
+    background-color: #1e293b !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.dark .fi-fo-wizard-step * {
+    color: #f8fafc !important;
+}
+
+/* Adaptabilidad total Modo Blanco vs Modo Oscuro para Modal de Cuotas */
+.fi-modal-content .bg-white {
+    background-color: #ffffff;
+    color: #0f172a;
+}
+
+.dark .fi-modal-content .bg-white,
+.dark .fi-modal-content div[class*="bg-white"] {
+    background-color: #0f172a !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.dark .fi-modal-content [class*="text-slate-800"],
+.dark .fi-modal-content [class*="text-slate-700"],
+.dark .fi-modal-content [class*="text-slate-900"] {
+    color: #f8fafc !important;
+}

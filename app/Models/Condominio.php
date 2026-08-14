@@ -51,4 +51,9 @@ class Condominio extends Model implements HasName
     {
         return $this->hasMany(Departamento::class);
     }
+    /** Relación con las cuentas bancarias del edificio */
+    public function bancos()
+    {
+        return $this->hasMany(Banco::class);
+    }
 }

@@ -55,6 +55,12 @@ class _PagosScreenState extends State<PagosScreen> {
   void _modalPagar(dynamic pago) {
     _voucherImage = null;
 
+    String conceptoTxt = (pago['concepto'] ?? 'Cuota de Mantenimiento').toString();
+    String mesTxt = (pago['mes'] ?? '').toString();
+    if (!conceptoTxt.contains(mesTxt) && mesTxt.isNotEmpty) {
+      conceptoTxt = "$conceptoTxt - $mesTxt";
+    }
+
     showDialog(
       context: context,
       builder: (BuildContext ctx) {
@@ -72,40 +78,44 @@ class _PagosScreenState extends State<PagosScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Concepto: ${pago['concepto'] ?? 'Cuota de Mantenimiento'}',
+                      'Concepto: $conceptoTxt',
                       style: const TextStyle(color: Colors.white70, fontSize: 13),
                     ),
                     Text(
                       'Monto Total: ${pago['monto_formateado'] ?? 'S/ 0.00'}',
                       style: const TextStyle(color: Color(0xFF38BDF8), fontWeight: FontWeight.bold, fontSize: 16),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 14),
 
-                    // Tarjeta de Cuentas Bancarias del Edificio
+                    // Cuentas Bancarias Oficiales del Edificio
                     if (_cuentasBancarias.isNotEmpty)
                       Container(
-                        padding: const EdgeInsets.all(10),
+                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.blueGrey.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(10),
+                          color: const Color(0xFF1E293B),
+                          borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: Colors.white12),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('🏦 Cuentas del Edificio:', style: TextStyle(color: Colors.amberAccent, fontSize: 12, fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 4),
-                            Text('Titular: ${_cuentasBancarias['titular'] ?? ''}', style: const TextStyle(color: Colors.white70, fontSize: 11)),
-                            Text('Banco/Cuenta: ${_cuentasBancarias['banco']} - ${_cuentasBancarias['numero_cuenta']}', style: const TextStyle(color: Colors.white70, fontSize: 11)),
-                            Text('CCI: ${_cuentasBancarias['cci']}', style: const TextStyle(color: Colors.white70, fontSize: 11)),
-                            Text('Yape/Plin: ${_cuentasBancarias['yape_plin']}', style: const TextStyle(color: Colors.greenAccent, fontSize: 11, fontWeight: FontWeight.bold)),
+                            const Text('🏦 Cuentas Oficiales de Depósito:', style: TextStyle(color: Colors.amberAccent, fontSize: 12, fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 6),
+                            if (_cuentasBancarias['titular'] != null)
+                              Text('Titular: ${_cuentasBancarias['titular']}', style: const TextStyle(color: Colors.white70, fontSize: 11)),
+                            if (_cuentasBancarias['banco'] != null)
+                              Text('Banco: ${_cuentasBancarias['banco']} - N° ${_cuentasBancarias['numero_cuenta'] ?? ''}', style: const TextStyle(color: Colors.white70, fontSize: 11)),
+                            if (_cuentasBancarias['cci'] != null && _cuentasBancarias['cci'] != 'N/A')
+                              Text('CCI: ${_cuentasBancarias['cci']}', style: const TextStyle(color: Colors.white70, fontSize: 11)),
+                            if (_cuentasBancarias['yape_plin'] != null)
+                              Text('Yape/Plin: ${_cuentasBancarias['yape_plin']}', style: const TextStyle(color: Colors.greenAccent, fontSize: 11, fontWeight: FontWeight.bold)),
                           ],
                         ),
                       ),
 
                     const SizedBox(height: 16),
 
-                    // Botón Único de Galería (Seguro para iOS/Android)
+                    // BOTÓN ÚNICO SEGURO DE GALERÍA: SUBIR PAGO
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
@@ -119,33 +129,35 @@ class _PagosScreenState extends State<PagosScreen> {
                           }
                         },
                         icon: const Icon(Icons.photo_library, size: 20),
-                        label: const Text('Elegir Comprobante de Galería'),
+                        label: const Text('📷 SUBIR PAGO', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF0284C7),
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
                       ),
                     ),
 
                     const SizedBox(height: 12),
 
-                    // Previsualización
+                    // Previsualización de Comprobante Adjunto
                     if (_voucherImage != null)
                       Container(
-                        padding: const EdgeInsets.all(8),
+                        padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
                           color: Colors.green.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.green.withOpacity(0.4)),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.check_circle, color: Colors.green, size: 20),
+                            const Icon(Icons.check_circle, color: Colors.greenAccent, size: 20),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                'Adjuntado: ${_voucherImage!.name}',
-                                style: const TextStyle(color: Colors.greenAccent, fontSize: 11),
+                                'Comprobante listo: ${_voucherImage!.name}',
+                                style: const TextStyle(color: Colors.greenAccent, fontSize: 12, fontWeight: FontWeight.bold),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
@@ -154,7 +166,7 @@ class _PagosScreenState extends State<PagosScreen> {
                       )
                     else
                       const Text(
-                        'Selecciona la captura de tu Yape, Plin o Transferencia.',
+                        'Selecciona la foto de tu Yape, Plin o Transferencia.',
                         style: TextStyle(color: Colors.white54, fontSize: 12),
                       ),
                   ],
@@ -273,7 +285,7 @@ class _PagosScreenState extends State<PagosScreen> {
   Widget _buildReciboCard(dynamic item) {
     final String estado = (item['estado'] ?? 'Pendiente').toString();
     final bool isPagado = estado.toLowerCase() == 'pagado' || estado.toLowerCase() == 'al dia';
-    final bool isRevision = estado.toLowerCase() == 'revision' || estado.toLowerCase() == 'validando';
+    final bool isRevision = estado.toLowerCase() == 'revision' || estado.toLowerCase() == 'validando' || estado.toLowerCase() == 'en_revision';
 
     Color colorEstado = Colors.red;
     String textoEstado = "Pendiente";
@@ -284,6 +296,12 @@ class _PagosScreenState extends State<PagosScreen> {
     } else if (isRevision) {
       colorEstado = Colors.amber;
       textoEstado = "Validando";
+    }
+
+    String conceptoBase = (item['concepto'] ?? 'Cuota de Mantenimiento').toString();
+    String mesStr = (item['mes'] ?? '').toString();
+    if (!conceptoBase.contains(mesStr) && mesStr.isNotEmpty) {
+      conceptoBase = "$conceptoBase - $mesStr";
     }
 
     return Container(
@@ -302,7 +320,7 @@ class _PagosScreenState extends State<PagosScreen> {
             children: [
               Expanded(
                 child: Text(
-                  '${item['concepto'] ?? 'Cuota de Mantenimiento'} - ${item['mes'] ?? ''}',
+                  conceptoBase,
                   style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
                 ),
               ),
@@ -347,12 +365,12 @@ class _PagosScreenState extends State<PagosScreen> {
                     disabledBackgroundColor: isPagado ? Colors.green.withOpacity(0.3) : Colors.amber.withOpacity(0.3),
                   ),
                   icon: Icon(
-                    isPagado ? Icons.check_circle : (isRevision ? Icons.access_time : Icons.payments),
+                    isPagado ? Icons.check_circle : (isRevision ? Icons.access_time : Icons.upload_file),
                     color: Colors.white,
                     size: 18,
                   ),
                   label: Text(
-                    isPagado ? 'Pagado' : (isRevision ? 'Validando' : '💳 Adjuntar Pago'),
+                    isPagado ? 'Pagado' : (isRevision ? 'Validando' : '📷 SUBIR PAGO'),
                     style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                 ),

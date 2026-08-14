@@ -28,30 +28,30 @@ class VecinoPanelProvider extends PanelProvider
     {
         return $panel
             ->id('vecino')
-            ->spa()
+            ->path('')
             ->domain(str_contains(request()->getHost(), 'test') ? null : 'vecino.livo.com.pe')
             ->path(str_contains(request()->getHost(), 'test') ? 'vecino' : '')
             ->login()
-            ->tenant(Condominio::class, slugAttribute: 'nombre') 
+            ->tenant(Condominio::class, slugAttribute: 'nombre')
             ->tenantRoutePrefix('edificio')
             ->brandName('LIVO Vecinos')
-          ->brandLogo(function () {
-            $tenant = \Filament\Facades\Filament::getTenant();
-            if ($tenant && !empty($tenant->logo_claro) && file_exists(storage_path('app/public/' . $tenant->logo_claro))) {
-                return asset('storage/' . $tenant->logo_claro);
-            }
-            return asset('images/logo-light.png');
-        })
-        ->darkModeBrandLogo(function () {
-            $tenant = \Filament\Facades\Filament::getTenant();
-            if ($tenant && !empty($tenant->logo) && file_exists(storage_path('app/public/' . $tenant->logo))) {
-                return asset('storage/' . $tenant->logo);
-            }
-            return asset('images/logo-dark.png');
-        })
-        ->brandLogoHeight('3.8rem')
+            ->brandLogo(function () {
+                $tenant = \Filament\Facades\Filament::getTenant();
+                if ($tenant && !empty($tenant->logo_claro) && file_exists(storage_path('app/public/' . $tenant->logo_claro))) {
+                    return asset('storage/' . $tenant->logo_claro);
+                }
+                return asset('images/logo-light.png');
+            })
+            ->darkModeBrandLogo(function () {
+                $tenant = \Filament\Facades\Filament::getTenant();
+                if ($tenant && !empty($tenant->logo) && file_exists(storage_path('app/public/' . $tenant->logo))) {
+                    return asset('storage/' . $tenant->logo);
+                }
+                return asset('images/logo-dark.png');
+            })
+            ->brandLogoHeight('3.8rem')
 
-            // 🔔 ACTIVAR NOTIFICACIONES POP-UP EN VIVO
+            // ACTIVAR NOTIFICACIONES POP-UP EN VIVO
             ->databaseNotifications()
             ->databaseNotificationsPolling('3s')
 
@@ -63,10 +63,10 @@ class VecinoPanelProvider extends PanelProvider
                 \App\Filament\Vecino\Pages\Escritorio::class,
                 \App\Filament\Pages\EditProfile::class,
             ])
-            
+
             ->discoverResources(in: app_path('Filament/Vecino/Resources'), for: 'App\\Filament\\Vecino\\Resources')
             ->discoverPages(in: app_path('Filament/Vecino/Pages'), for: 'App\\Filament\\Vecino\\Pages')
-            
+
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
@@ -78,6 +78,7 @@ class VecinoPanelProvider extends PanelProvider
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
             ])
+
             ->authMiddleware([
                 Authenticate::class,
             ])
@@ -90,17 +91,22 @@ class VecinoPanelProvider extends PanelProvider
                 NavigationGroup::make('Configuración'),
             ])
 
-      ->renderHook(
-    PanelsRenderHook::HEAD_END,
-    fn (): string => Blade::render('<link rel="stylesheet" href="' . asset('css/custom.css') . '?v=' . time() . '">'),
-)
+            // OCULTAR LOGO DUPLICADO EN LA BARRA SUPERIOR
+            ->renderHook(
+                PanelsRenderHook::HEAD_END,
+                fn (): string => '<style>header.fi-topbar a.fi-logo, header.fi-topbar .fi-logo { display: none !important; }</style>'
+            )
 
-->renderHook(
-    PanelsRenderHook::BODY_END,
-    fn (): string => view()->exists('filament.vecino.components.mobile-navbar')
-        ? Blade::render('@include("filament.vecino.components.mobile-navbar")')
-        : ''
-);
+            ->renderHook(
+                PanelsRenderHook::HEAD_END,
+                fn (): string => '<link rel="stylesheet" href="' . asset('css/custom.css') . '?v=' . time() . '">',
+            )
+
+            ->renderHook(
+                PanelsRenderHook::BODY_END,
+                fn (): string => view()->exists('filament.vecino.components.mobile-navbar')
+                    ? Blade::render('@include("filament.vecino.components.mobile-navbar")')
+                    : ''
+            );
     }
-    
 }
