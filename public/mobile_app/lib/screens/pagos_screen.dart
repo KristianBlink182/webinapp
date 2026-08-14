@@ -121,7 +121,7 @@ class _PagosScreenState extends State<PagosScreen> {
                             children: [
                               Text(
                                 esYape ? '📲 Yape / Plin (Billetera Digital)' : '🏦 ${banco['banco']} (${banco['tipo_cuenta'] ?? 'Corriente'})',
-                                style: TextStyle(color: esYape ? Colors.greenAccent : Colors.skyAccent, fontSize: 12, fontWeight: FontWeight.bold),
+                               style: TextStyle(color: esYape ? Colors.greenAccent : Colors.lightBlueAccent, fontSize: 12, fontWeight: FontWeight.bold),
                               ),
                               const SizedBox(height: 4),
                               if (banco['titular'] != null)
