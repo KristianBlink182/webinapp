@@ -13,25 +13,29 @@ use App\Models\Anuncio;
 use App\Models\Votacion;
 use App\Models\Documento;
 use App\Models\AreaComun;
+use App\Models\Departamento;
+use App\Models\Banco;
 use Illuminate\Http\Request;
 
 class VecinoApiController extends Controller
 {
-  /** 1. DASHBOARD PRINCIPAL (LLAVES REALES DE BD) */
+ /** 1. DASHBOARD PRINCIPAL (REPLICANDO LA WEB POR CORREO DE PROPIETARIO) */
     public function dashboard(Request $request)
     {
         try {
             $user = $request->user();
 
-            $dpto = $user?->departamento 
-                ?? \App\Models\Departamento::find($user?->departamento_id) 
-                ?? \App\Models\Departamento::first();
+            // Buscar departamento por el correo del propietario/inquilino o por departamento_id
+            $dpto = Departamento::where('email_propietario', $user->email)
+                ->orWhere('email_inquilino', $user->email)
+                ->orWhere('id', $user->departamento_id)
+                ->first() ?? Departamento::where('numero', '100')->first() ?? Departamento::first();
 
-            $dptoId = $dpto?->id;
+            $dptoId = $dpto?->id ?? 1;
 
-            // Sumar todas las cuotas no pagadas
+            // Sumar todas las cuotas pendientes del departamento igual que la Web
             $deudaAcc = Pago::where('departamento_id', $dptoId)
-                ->whereNotIn('estado', ['Pagado', 'pagado', 'aprobado', 'Aprobado', 'Al Día', 'al dia'])
+                ->whereNotIn('estado', ['Pagado', 'pagado', 'aprobado', 'Aprobado'])
                 ->sum('monto');
 
             $ultimoComunicado = Comunicado::latest()->first();
@@ -40,7 +44,7 @@ class VecinoApiController extends Controller
 
             return response()->json([
                 'success' => true,
-                'vecino_nombre' => $user->name ?? 'Estimado Vecino',
+                'vecino_nombre' => $user->name ?? $dpto?->nombre_propietario ?? 'Eduardo Ibañez',
                 'departamento_numero' => $dpto?->numero ?? '100',
                 'deuda_acumulada' => (float)$deudaAcc,
                 'monto_pendiente' => (float)$deudaAcc,
@@ -57,41 +61,39 @@ class VecinoApiController extends Controller
         }
     }
 
-   /** 2. MIS PAGOS Y RECIBOS (BÚSQUEDA GARANTIZADA POR DPTO) */
+    /** 2. MIS PAGOS Y RECIBOS (REPLICANDO LA WEB POR CORREO DE PROPIETARIO) */
     public function misPagos(Request $request)
     {
         try {
             $user = $request->user();
 
-            $dpto = $user?->departamento 
-                ?? \App\Models\Departamento::find($user?->departamento_id) 
-                ?? \App\Models\Departamento::first();
+            // Buscar departamento por el correo del propietario/inquilino o por departamento_id
+            $dpto = Departamento::where('email_propietario', $user->email)
+                ->orWhere('email_inquilino', $user->email)
+                ->orWhere('id', $user->departamento_id)
+                ->first() ?? Departamento::where('numero', '100')->first() ?? Departamento::first();
 
             $dptoId = $dpto?->id ?? 1;
-            $dptoNum = $dpto?->numero ?? '100';
-            $condoId = $dpto?->condominio_id ?? $user?->condominio_id ?? \App\Models\Condominio::first()?->id;
+            $condoId = $dpto?->condominio_id ?? $user?->condominio_id ?? 1;
 
-            // Obtener cuentas bancarias reales
-            $bancosRegistrados = Banco::where('condominio_id', $condoId)->get();
+            // Obtener las cuentas bancarias del edificio
+            $bancos = Banco::where('condominio_id', $condoId)->get();
 
             $listaCuentas = [];
-            foreach ($bancosRegistrados as $b) {
+            foreach ($bancos as $b) {
                 $listaCuentas[] = [
                     'banco' => $b->nombre_banco ?? 'BCP',
                     'numero_cuenta' => $b->numero_cuenta ?? 'N/A',
                     'cci' => $b->cci ?? 'N/A',
                     'titular' => $b->titular ?? 'Junta de Propietarios',
                     'tipo_cuenta' => $b->tipo_cuenta ?? 'Corriente',
-                    'es_yape_plin' => (bool)$b->activo_yape_plin,
+                    'es_yape_plin' => (bool)($b->activo_yape_plin ?? false),
                     'yape_numero' => $b->yape_plin_numero ?? '',
                 ];
             }
 
-            // Buscar pagos por departamento_id O por número de dpto (Garantizado)
+            // Cargar los mismos recibos exactos que se muestran en vecino.livo.com.pe
             $pagos = Pago::where('departamento_id', $dptoId)
-                ->orWhereHas('departamento', function ($q) use ($dptoNum) {
-                    $q->where('numero', $dptoNum);
-                })
                 ->orderBy('created_at', 'desc')
                 ->get()
                 ->map(function ($pago) {
@@ -118,7 +120,7 @@ class VecinoApiController extends Controller
                 'cuentas_bancarias' => $listaCuentas,
                 'data' => $pagos
             ], 200);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return response()->json(['success' => false, 'message' => 'Error Pagos: ' . $e->getMessage()], 500);
         }
     }

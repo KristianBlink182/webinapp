@@ -1,5 +1,5 @@
 class ApiConfig {
-  static const String baseUrl = 'https://vecino.livo.com.pe/api/v1';
+  static const String baseUrl = 'https://admin.livo.com.pe/api/v1';
 
   static const String login = '$baseUrl/auth/login';
   static const String me = '$baseUrl/auth/me';
