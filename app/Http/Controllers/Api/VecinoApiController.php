@@ -28,7 +28,7 @@ class VecinoApiController extends Controller
 
             // Consultar saldo pendiente acumulado
             $saldoPendiente = Pago::where('departamento_id', $dptoId)
-                ->whereIn('estado', ['Pendiente', 'pendiente'])
+               ->whereNotIn('estado', ['Pagado', 'pagado', 'aprobado', 'Aprobado', 'Al Día', 'al dia'])
                 ->sum('monto') ?? 0;
 
             $ultimoComunicado = Comunicado::where('condominio_id', $condominio?->id ?? 1)->latest()->first();
@@ -81,7 +81,7 @@ class VecinoApiController extends Controller
                 ->map(function ($pago) {
                     return [
                         'id' => $pago->id,
-                        'concepto' => $pago->concepto ?? $pago->concepto_pago ?? 'Cuota de Mantenimiento',
+                        'concepto' => (!empty($pago->concepto) ? $pago->concepto : 'Cuota de Mantenimiento') . (!empty($pago->mes) && !str_contains($pago->concepto ?? '', $pago->mes) ? " - {$pago->mes}" : ''),
                         'mes' => $pago->mes ?? 'Mes Actual',
                         'monto' => (float)($pago->monto ?? $pago->monto_mantenimiento ?? 0),
                         'monto_formateado' => 'S/ ' . number_format((float)($pago->monto ?? $pago->monto_mantenimiento ?? 0), 2, '.', ','),
@@ -163,37 +163,32 @@ class VecinoApiController extends Controller
         }
     }
     /**
- * 3. DISPARAR S.O.S. (LÓGICA IDÉNTICA A LA WEB - ALERTA REAL A PORTERÍA Y ADMIN)
- */
-public function dispararSOS(Request $request)
-{
-    try {
-        $user = $request->user();
-        $dpto = $user->departamento ?? \App\Models\Departamento::find($user->departamento_id ?? 1);
-        $dptoId = $dpto?->id ?? $user->departamento_id ?? 1;
-        $condoId = $dpto?->condominio_id ?? 1;
+ /** 3. DISPARAR S.O.S. EN TIEMPO REAL A PORTERÍA */
+    public function dispararSOS(Request $request)
+    {
+        try {
+            $user = $request->user();
+            $dpto = $user->departamento ?? \App\Models\Departamento::find($user->departamento_id ?? 1);
+            $dptoId = $dpto?->id ?? 1;
+            $condoId = $dpto?->condominio_id ?? $user->condominio_id ?? 1;
 
-        $alerta = AlertaSOS::create([
-            'condominio_id'   => $condoId,
-            'departamento_id' => $dptoId,
-            'user_id'         => $user->id,
-            'tipo'            => 'S.O.S. App Nativa',
-            'descripcion'     => "¡ALERTA S.O.S! El residente {$user->name} del Dpto. " . ($dpto?->numero ?? '100') . " requiere asistencia inmediata en Portería.",
-            'estado'          => 'Pendiente',
-        ]);
+            \App\Models\AlertaSOS::create([
+                'condominio_id' => $condoId,
+                'departamento_id' => $dptoId,
+                'user_id' => $user->id,
+                'tipo' => 'EMERGENCIA_SOS',
+                'descripcion' => '¡ALERTA S.O.S.! El residente ' . ($user->name ?? 'Vecino') . ' (Dpto. ' . ($dpto?->numero ?? 'N/E') . ') solicita ayuda urgente en Portería.',
+                'estado' => 'Pendiente',
+            ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => '¡Alerta S.O.S. enviada a Portería! La ayuda está en camino.',
-            'alerta'  => $alerta,
-        ], 200);
-    } catch (\Throwable $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Error al disparar S.O.S: ' . $e->getMessage(),
-        ], 500);
+            return response()->json([
+                'success' => true,
+                'message' => '¡Alerta S.O.S. enviada a Portería! La ayuda está en camino.'
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error S.O.S.: ' . $e->getMessage()], 500);
+        }
     }
-}
 
     /** 4. INVITADOS */
     public function invitados(Request $request)

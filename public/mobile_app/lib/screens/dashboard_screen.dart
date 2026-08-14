@@ -87,26 +87,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  void _dispararSOS() async {
-    setState(() {
-      _isSosActivo = true;
-    });
+ void _dispararSOS() async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        backgroundColor: Colors.redAccent,
+        duration: Duration(seconds: 2),
+        content: Row(
+          children: [
+            SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
+            SizedBox(width: 10),
+            Text('🚨 Enviando Alerta S.O.S. a Portería...', style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+      ),
+    );
 
     final result = await ApiService.dispararSOS(widget.token);
 
     if (result['success'] == true) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: Colors.redAccent,
           duration: const Duration(seconds: 5),
           content: Row(
             children: [
-              const Icon(Icons.warning, color: Colors.white),
-              const SizedBox(width: 8),
+              const Icon(Icons.warning, color: Colors.white, size: 24),
+              const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   result['message'] ?? '¡ALERTA S.O.S. ENVIADA A PORTERÍA!',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                 ),
               ),
             ],
@@ -114,10 +125,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
       );
     } else {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: Colors.orange,
-          content: Text(result['message'] ?? 'Error al enviar señal S.O.S.'),
+          content: Text(result['message'] ?? 'Error al conectar con Portería.'),
         ),
       );
     }
@@ -316,7 +328,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    onPressed: _confirmarYDispararSOS,
+                    onPressed: _dispararSOS,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.redAccent,
                       padding: const EdgeInsets.symmetric(vertical: 14),
