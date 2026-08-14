@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
@@ -15,7 +16,7 @@ class PagosScreen extends StatefulWidget {
 
 class _PagosScreenState extends State<PagosScreen> {
   List<dynamic> _pagos = [];
-  Map<String, dynamic> _cuentasBancarias = {};
+  List<dynamic> _cuentasBancarias = [];
   bool _isLoading = true;
   XFile? _voucherImage;
   bool _isUploading = false;
@@ -31,7 +32,7 @@ class _PagosScreenState extends State<PagosScreen> {
     if (res['success'] == true) {
       setState(() {
         _pagos = res['data'] ?? [];
-        _cuentasBancarias = res['cuentas_bancarias'] ?? {};
+        _cuentasBancarias = res['cuentas_bancarias'] is List ? res['cuentas_bancarias'] : [];
         _isLoading = false;
       });
     } else {
@@ -50,6 +51,17 @@ class _PagosScreenState extends State<PagosScreen> {
         const SnackBar(content: Text('No se pudo abrir el archivo PDF.')),
       );
     }
+  }
+
+  void _copiarAlPortapapeles(String texto, String campo) {
+    Clipboard.setData(ClipboardData(text: texto));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: Colors.lightBlueAccent,
+        duration: const Duration(seconds: 2),
+        content: Text('📋 $campo copiado al portapapeles: $texto', style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+      ),
+    );
   }
 
   void _modalPagar(dynamic pago) {
@@ -87,35 +99,72 @@ class _PagosScreenState extends State<PagosScreen> {
                     ),
                     const SizedBox(height: 14),
 
-                    // Cuentas Bancarias Oficiales del Edificio
-                    if (_cuentasBancarias.isNotEmpty)
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1E293B),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.white12),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('🏦 Cuentas Oficiales de Depósito:', style: TextStyle(color: Colors.amberAccent, fontSize: 12, fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 6),
-                            if (_cuentasBancarias['titular'] != null)
-                              Text('Titular: ${_cuentasBancarias['titular']}', style: const TextStyle(color: Colors.white70, fontSize: 11)),
-                            if (_cuentasBancarias['banco'] != null)
-                              Text('Banco: ${_cuentasBancarias['banco']} - N° ${_cuentasBancarias['numero_cuenta'] ?? ''}', style: const TextStyle(color: Colors.white70, fontSize: 11)),
-                            if (_cuentasBancarias['cci'] != null && _cuentasBancarias['cci'] != 'N/A')
-                              Text('CCI: ${_cuentasBancarias['cci']}', style: const TextStyle(color: Colors.white70, fontSize: 11)),
-                            if (_cuentasBancarias['yape_plin'] != null)
-                              Text('Yape/Plin: ${_cuentasBancarias['yape_plin']}', style: const TextStyle(color: Colors.greenAccent, fontSize: 11, fontWeight: FontWeight.bold)),
-                          ],
-                        ),
-                      ),
+                    // LISTA DINÁMICA DE CUENTAS BANCARIAS Y YAPE CON BOTÓN COPIAR
+                    if (_cuentasBancarias.isNotEmpty) ...[
+                      const Text('🏦 Cuentas Oficiales de Depósito:', style: TextStyle(color: Colors.amberAccent, fontSize: 12, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      ..._cuentasBancarias.map((banco) {
+                        bool esYape = banco['es_yape_plin'] == true || banco['banco'] == 'Yape / Plin';
+                        String numCuenta = banco['numero_cuenta'] ?? '';
+                        String numYape = banco['yape_numero'] ?? '';
 
-                    const SizedBox(height: 16),
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1E293B),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: Colors.white12),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                esYape ? '📲 Yape / Plin (Billetera Digital)' : '🏦 ${banco['banco']} (${banco['tipo_cuenta'] ?? 'Corriente'})',
+                                style: TextStyle(color: esYape ? Colors.greenAccent : Colors.skyAccent, fontSize: 12, fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: 4),
+                              if (banco['titular'] != null)
+                                Text('Titular: ${banco['titular']}', style: const TextStyle(color: Colors.white70, fontSize: 11)),
+                              
+                              if (!esYape && numCuenta.isNotEmpty && numCuenta != 'N/A')
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(child: Text('N° Cuenta: $numCuenta', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))),
+                                    InkWell(
+                                      onTap: () => _copiarAlPortapapeles(numCuenta, 'Número de Cuenta'),
+                                      child: const Padding(
+                                        padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                        child: Text('📋 Copiar', style: TextStyle(color: Colors.amberAccent, fontSize: 11, fontWeight: FontWeight.bold)),
+                                      ),
+                                    ),
+                                  ],
+                                ),
 
-                    // BOTÓN ÚNICO SEGURO DE GALERÍA: SUBIR PAGO
+                              if (esYape && numYape.isNotEmpty)
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(child: Text('Número Yape: $numYape', style: const TextStyle(color: Colors.greenAccent, fontSize: 12, fontWeight: FontWeight.bold))),
+                                    InkWell(
+                                      onTap: () => _copiarAlPortapapeles(numYape, 'Número Yape'),
+                                      child: const Padding(
+                                        padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                        child: Text('📋 Copiar', style: TextStyle(color: Colors.amberAccent, fontSize: 11, fontWeight: FontWeight.bold)),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ],
+
+                    const SizedBox(height: 14),
+
+                    // BOTÓN ÚNICO SEGURO DE SUBIR PAGO
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
@@ -139,7 +188,7 @@ class _PagosScreenState extends State<PagosScreen> {
                       ),
                     ),
 
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
 
                     // Previsualización de Comprobante Adjunto
                     if (_voucherImage != null)
