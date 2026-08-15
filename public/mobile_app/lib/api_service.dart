@@ -103,16 +103,28 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>> registrarMarketplace(String token, String titulo, String precio, String desc) async {
+ static Future<Map<String, dynamic>> registrarMarketplace(
+      String token, String titulo, String precio, String telefono, String desc, String? imagePath) async {
     try {
-      final res = await http.post(
-        Uri.parse('$base/vecino/marketplace'),
-        headers: _headers(token),
-        body: jsonEncode({'titulo': titulo, 'precio': precio, 'descripcion': desc}),
-      );
-      return jsonDecode(res.body);
+      var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/vecino/marketplace'));
+      request.headers.addAll({
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      });
+      request.fields['producto'] = titulo;
+      request.fields['precio'] = precio;
+      request.fields['telefono_whatsapp'] = telefono;
+      request.fields['descripcion'] = desc;
+
+      if (imagePath != null && imagePath.isNotEmpty) {
+        request.files.add(await http.MultipartFile.fromPath('imagen', imagePath));
+      }
+
+      var res = await request.send();
+      var respStr = await res.stream.bytesToString();
+      return jsonDecode(respStr);
     } catch (e) {
-      return {'success': false};
+      return {'success': false, 'message': 'Error de red al publicar.'};
     }
   }
 

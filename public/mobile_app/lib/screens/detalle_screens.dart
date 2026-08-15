@@ -195,7 +195,7 @@ class _MarketplaceListScreenState extends State<MarketplaceListScreen> {
                 );
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(backgroundColor: Colors.green, content: Text(res['message'] ?? 'Producto publicado.')));
-                  _cargarData();
+                  _cargar(); // <--- ¡AQUÍ DICE _cargar()!
                 }
               },
               child: const Text('Publicar', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
