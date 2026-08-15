@@ -44,6 +44,7 @@ Route::prefix('v1')->group(function () {
     // Áreas Comunes & Cámara
     Route::get('/vecino/areas-comunes', [VecinoApiController::class, 'areasComunes']);
     Route::get('/vecino/camara', [VecinoApiController::class, 'camara']);
+    Route::post('/vecino/areas-comunes/reservar', [VecinoApiController::class, 'reservarAreaComun']);
 
     // Comunicados, Marketplace, Votaciones, Documentos
     Route::get('/vecino/comunicados', [VecinoApiController::class, 'comunicados']);

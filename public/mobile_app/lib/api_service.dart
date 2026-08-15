@@ -82,7 +82,29 @@ class ApiService {
       return {'success': false};
     }
   }
+static Future<Map<String, dynamic>> reservarAreaComun(
+      String token, String areaId, String fecha, String? voucherPath) async {
+    try {
+      final String endpointUrl = 'https://admin.livo.com.pe/api/v1/vecino/areas-comunes/reservar';
+      var request = http.MultipartRequest('POST', Uri.parse(endpointUrl));
+      request.headers.addAll({
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      });
+      request.fields['area_comun_id'] = areaId;
+      request.fields['fecha_reserva'] = fecha;
 
+      if (voucherPath != null && voucherPath.isNotEmpty) {
+        request.files.add(await http.MultipartFile.fromPath('voucher', voucherPath));
+      }
+
+      var res = await request.send();
+      var respStr = await res.stream.bytesToString();
+      return jsonDecode(respStr);
+    } catch (e) {
+      return {'success': false, 'message': 'Error de red al enviar reserva.'};
+    }
+  }
   // 7. COMUNICADOS
   static Future<Map<String, dynamic>> getComunicados(String token) async {
     try {

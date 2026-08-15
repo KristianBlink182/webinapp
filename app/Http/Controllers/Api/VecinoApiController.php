@@ -14,9 +14,11 @@ use App\Models\AreaComun;
 use App\Models\Documento;
 use App\Models\Votacion;
 use App\Models\Marketplace;
+use App\Models\Anuncio;
 use App\Models\Banco;
 use App\Models\User;
 use App\Models\AlertaSOS;
+use App\Models\Reserva;
 use Laravel\Sanctum\PersonalAccessToken;
 
 class VecinoApiController extends Controller
@@ -363,6 +365,59 @@ public function misPagos(Request $request)
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'data' => []]);
         }
+        
+    }
+    /**
+     * REGISTRAR SOLICITUD DE RESERVA DE ÁREA COMÚN
+     */
+    public function reservarAreaComun(Request $request)
+    {
+        try {
+            $user = $this->getAuthenticatedUser($request);
+
+            $dpto = null;
+            if ($user && !empty($user->email)) {
+                $dpto = Departamento::where('email_propietario', $user->email)
+                    ->orWhere('email_inquilino', $user->email)
+                    ->first();
+            }
+
+            if (!$dpto && $user && !empty($user->departamento_id)) {
+                $dpto = Departamento::find($user->departamento_id);
+            }
+
+            $condominioId = $dpto->condominio_id ?? $user->condominio_id ?? 1;
+            $dptoId = $dpto->id ?? 1;
+
+            $voucherPath = null;
+            if ($request->hasFile('voucher')) {
+                $voucherPath = $request->file('voucher')->store('vouchers', 'public');
+            }
+
+            $areaId = $request->input('area_comun_id') ?? $request->input('area_id') ?? 1;
+            $fecha = $request->input('fecha_reserva') ?? $request->input('fecha') ?? now()->format('Y-m-d');
+
+            Reserva::create([
+                'condominio_id' => $condominioId,
+                'departamento_id' => $dptoId,
+                'user_id' => $user->id ?? 4,
+                'area_comun_id' => $areaId,
+                'fecha' => $fecha,
+                'estado' => 'Pendiente',
+                'voucher' => $voucherPath,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Solicitud de reserva enviada a la administración.'
+            ], 200);
+
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al reservar: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /** 6. CÁMARA EN VIVO */
@@ -397,29 +452,15 @@ public function misPagos(Request $request)
     }
 
   /**
-     * 8. MARKETPLACE VECINAL (LISTA DE PRODUCTOS PUBLICADOS)
+     * 8. MARKETPLACE VECINAL (REPLICADO 100% CON LA WEB)
      */
     public function marketplace(Request $request)
     {
         try {
             $user = $this->getAuthenticatedUser($request);
 
-            $dpto = null;
-            if ($user && !empty($user->email)) {
-                $dpto = Departamento::where('email_propietario', $user->email)
-                    ->orWhere('email_inquilino', $user->email)
-                    ->first();
-            }
-
-            if (!$dpto && $user && !empty($user->departamento_id)) {
-                $dpto = Departamento::find($user->departamento_id);
-            }
-
-            $condoId = $dpto->condominio_id ?? $user->condominio_id ?? 1;
-
-            $anuncios = Anuncio::where('condominio_id', $condoId)
-                ->latest()
-                ->get();
+            // Cargar todos los anuncios activos
+            $anuncios = Anuncio::latest()->get();
 
             $format = $anuncios->map(function ($a) {
                 return [
@@ -430,6 +471,7 @@ public function misPagos(Request $request)
                     'telefono_whatsapp' => !empty($a->telefono_whatsapp) ? $a->telefono_whatsapp : ($a->user->telefono ?? '98765234'),
                     'descripcion' => $a->descripcion ?? '',
                     'vendedor' => $a->user->name ?? 'Eduardo Ibañez',
+                    'vendedor_departamento' => $a->departamento->numero ?? '100',
                     'departamento_numero' => $a->departamento->numero ?? '100',
                     'imagen_url' => !empty($a->imagen) ? 'https://admin.livo.com.pe/storage/' . ltrim($a->imagen, '/') : null,
                     'fecha' => $a->created_at?->format('d/m/Y') ?? ''

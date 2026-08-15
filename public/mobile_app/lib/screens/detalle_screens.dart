@@ -768,26 +768,38 @@ class _AreasComunesListScreenState extends State<AreasComunesListScreen> {
               onPressed: () => Navigator.pop(ctx),
               child: const Text('Cancelar', style: TextStyle(color: Colors.white54)),
             ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0284C7)),
-              onPressed: () {
-                if (fechaReserva == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(backgroundColor: Colors.orange, content: Text('Por favor elige la fecha de reserva.')),
-                  );
-                  return;
-                }
+           ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFF8B4C7)),
+                onPressed: () async {
+                  if (_fechaReserva == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(backgroundColor: Colors.orange, content: Text('Por favor elige la fecha de reserva.')),
+                    );
+                    return;
+                  }
 
-                Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    backgroundColor: Colors.green,
-                    content: Text('Solicitud de reserva enviada para el ${fechaReserva!.day}/${fechaReserva!.month}/${fechaReserva!.year}.'),
-                  ),
-                );
-              },
-              child: const Text('Confirmar Reserva', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-            ),
+                  Navigator.pop(ctx);
+
+                  final fechaFormatted = "${_fechaReserva!.year}-${_fechaReserva!.month.toString().padLeft(2, '0')}-${_fechaReserva!.day.toString().padLeft(2, '0')}";
+
+                  final res = await ApiService.reservarAreaComun(
+                    widget.token,
+                    area['id'].toString(),
+                    fechaFormatted,
+                    _voucherImage != null ? _voucherImage!.path : null,
+                  );
+
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        backgroundColor: res['success'] == true ? Colors.green : Colors.red,
+                        content: Text(res['message'] ?? 'Solicitud de reserva enviada.'),
+                      ),
+                    );
+                  }
+                },
+                child: const Text('Confirmar Reserva', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              )
           ],
         ),
       ),
