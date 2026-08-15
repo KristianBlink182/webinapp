@@ -124,7 +124,7 @@ class _MarketplaceListScreenState extends State<MarketplaceListScreen> {
     else setState(() => _isLoading = false);
   }
 
-  void _abrirwhatsApp(String telefono, String tituloProducto) async {
+  void _abrirWhatsApp(String telefono, String tituloProducto) async {
     final cleanPhone = telefono.replaceAll(RegExp(r'[^\d]'), '');
     final phone = cleanPhone.startsWith('51') ? cleanPhone : '51$cleanPhone';
     final mensaje = Uri.encodeComponent('¡Hola! Vi tu publicación "$tituloProducto" en el Marketplace de LIVO Vecinos.');
@@ -256,7 +256,7 @@ class _MarketplaceListScreenState extends State<MarketplaceListScreen> {
                       children: [
                         Expanded(
                           child: ElevatedButton.icon(
-                            onPressed: () => _abrirwhatsapp(item['telefono_whatsapp'] ?? '987654321', item['producto'] ?? 'Producto'),
+                            onPressed: () => _abrirWhatsApp(item['telefono_whatsapp'] ?? '987654321', item['producto'] ?? 'Producto'),
                             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF25D366)),
                             icon: const Icon(Icons.chat, color: Colors.white, size: 18),
                             label: const Text('Contactar por WhatsApp', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
