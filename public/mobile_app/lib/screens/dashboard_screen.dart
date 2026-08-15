@@ -252,6 +252,8 @@ void _abrirSiriShortcut() async {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+         // Tarjeta Atajo de Voz Siri oculta temporalmente
+/* 
           // 1. Tarjeta Bienvenida Siri
           Container(
             padding: const EdgeInsets.all(16),
@@ -282,7 +284,7 @@ void _abrirSiriShortcut() async {
               ],
             ),
           ),
-
+*/
           const SizedBox(height: 14),
 
           // 2. Tarjeta Estado de Cuenta
