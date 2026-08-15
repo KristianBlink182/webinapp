@@ -106,7 +106,8 @@ class ApiService {
  static Future<Map<String, dynamic>> registrarMarketplace(
       String token, String titulo, String precio, String telefono, String desc, String? imagePath) async {
     try {
-      var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/vecino/marketplace'));
+      final String endpointUrl = 'https://admin.livo.com.pe/api/v1/vecino/marketplace';
+      var request = http.MultipartRequest('POST', Uri.parse(endpointUrl));
       request.headers.addAll({
         'Accept': 'application/json',
         'Authorization': 'Bearer $token',
