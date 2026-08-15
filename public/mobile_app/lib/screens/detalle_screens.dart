@@ -648,34 +648,112 @@ class _ReclamosListScreenState extends State<ReclamosListScreen> {
   }
 }
 
-// 8. CÁMARA EN VIVO
-class CamaraScreen extends StatelessWidget {
+// 8. CAMARA EN VIVO DE SEGURIDAD
+class CamaraScreen extends StatefulWidget {
   final String token;
   const CamaraScreen({Key? key, required this.token}) : super(key: key);
+
+  @override
+  _CamaraScreenState createState() => _CamaraScreenState();
+}
+
+class _CamaraScreenState extends State<CamaraScreen> {
+  String _streamUrl = '';
+  String _nombreCamara = 'Cámara de Seguridad';
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarCamara();
+  }
+
+  void _cargarCamara() async {
+    final res = await ApiService.getCamara(widget.token);
+    if (mounted && res['success'] == true) {
+      setState(() {
+        final data = res['data'];
+        _streamUrl = data?['stream_url'] ?? 'https://www.youtube.com/embed/live_stream';
+        _nombreCamara = data?['nombre'] ?? '🔴 EN VIVO – Puerta Principal';
+        _isLoading = false;
+      });
+    } else {
+      if (mounted) setState(() { _isLoading = false; });
+    }
+  }
+
+  void _abrirStream() async {
+    if (_streamUrl.isEmpty) return;
+    final Uri url = Uri.parse(_streamUrl);
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo abrir la transmisión en vivo.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF060913),
-      appBar: AppBar(backgroundColor: const Color(0xFF060913), title: const Text('Cámara de Seguridad')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Container(
-          height: 220,
-          decoration: BoxDecoration(color: const Color(0xFF0F172A), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white10)),
-          child: const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.videocam, color: Colors.redAccent, size: 48),
-                SizedBox(height: 8),
-                Text('🔴 EN VIVO — Puerta Principal', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                SizedBox(height: 4),
-                Text('Transmisión segura en tiempo real', style: TextStyle(color: Colors.white54, fontSize: 12)),
-              ],
-            ),
-          ),
-        ),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF0F172A),
+        title: Text(_nombreCamara, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
       ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF0284C7)))
+          : Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0F172A),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.white10),
+                    ),
+                    child: Column(
+                      children: [
+                        const Icon(Icons.videocam, color: Colors.redAccent, size: 56),
+                        const SizedBox(height: 12),
+                        Text(
+                          _nombreCamara,
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                        ),
+                        const SizedBox(height: 6),
+                        const Text(
+                          'Monitoreo en tiempo real de la puerta principal y accesos del condominio.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.white54, fontSize: 13),
+                        ),
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: _abrirStream,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.redAccent,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            icon: const Icon(Icons.play_arrow, color: Colors.white, size: 24),
+                            label: const Text(
+                              '▶️ Ver Transmisión en Vivo',
+                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
     );
   }
 }

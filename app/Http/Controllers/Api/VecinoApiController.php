@@ -420,19 +420,54 @@ public function misPagos(Request $request)
         }
     }
 
-    /** 6. CÁMARA EN VIVO */
+   /**
+     * 6. CÁMARA DE SEGURIDAD EN VIVO (CONVERSIÓN AUTOMÁTICA DE LINK YOUTUBE)
+     */
     public function camara(Request $request)
     {
-        $user = $request->user();
-        $condo = $user->departamento?->condominio;
+        try {
+            $user = $this->getAuthenticatedUser($request);
 
-        return response()->json([
-            'success' => true,
-            'data'    => [
-                'nombre'     => '🔴 EN VIVO — Puerta Principal',
-                'stream_url' => $condo?->url_camara_principal ?? 'https://www.youtube.com/embed/live_stream',
-            ]
-        ], 200);
+            $dpto = null;
+            if ($user && !empty($user->email)) {
+                $dpto = Departamento::where('email_propietario', $user->email)
+                    ->orWhere('email_inquilino', $user->email)
+                    ->first();
+            }
+
+            if (!$dpto && $user && !empty($user->departamento_id)) {
+                $dpto = Departamento::find($user->departamento_id);
+            }
+
+            $condo = $dpto->condominio ?? Condominio::find(1);
+
+            $rawUrl = $condo->url_camara_principal ?? $condo->url_camara ?? 'https://www.youtube.com/embed/live_stream';
+
+            // Convertir links normales de YouTube a links embebidos reproducibles
+            if (str_contains($rawUrl, 'watch?v=')) {
+                $videoId = explode('watch?v=', $rawUrl)[1];
+                $videoId = explode('&', $videoId)[0];
+                $rawUrl = "https://www.youtube.com/embed/$videoId?autoplay=1&mute=1";
+            } elseif (str_contains($rawUrl, 'youtu.be/')) {
+                $videoId = explode('youtu.be/', $rawUrl)[1];
+                $videoId = explode('?', $videoId)[0];
+                $rawUrl = "https://www.youtube.com/embed/$videoId?autoplay=1&mute=1";
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'nombre' => '🔴 EN VIVO – Puerta Principal',
+                    'stream_url' => $rawUrl
+                ]
+            ], 200);
+
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error Cámara: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /** 7. COMUNICADOS */

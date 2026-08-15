@@ -136,12 +136,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
 void _abrirSiriShortcut() async {
-    final Uri url = Uri.parse("https://www.icloud.com/shortcuts/78a5e3d7a8bf4e8ea21051fa692c1eb6");
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
+    final Uri webUrl = Uri.parse("https://www.icloud.com/shortcuts/78a5e3d7a8bf4e8ea21051fa692c1eb6");
+    final Uri nativeAppUrl = Uri.parse("shortcuts://");
+
+    if (await canLaunchUrl(webUrl)) {
+      await launchUrl(webUrl, mode: LaunchMode.externalApplication);
+    } else if (await canLaunchUrl(nativeAppUrl)) {
+      await launchUrl(nativeAppUrl, mode: LaunchMode.externalApplication);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Abre la app Atajos en tu iPhone para configurar Siri.')),
+        const SnackBar(content: Text('Abre la aplicación Atajos en tu iPhone para configurar Siri.')),
       );
     }
   }
