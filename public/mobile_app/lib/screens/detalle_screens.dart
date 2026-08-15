@@ -831,16 +831,16 @@ class _AreasComunesListScreenState extends State<AreasComunesListScreen> {
                       );
                       if (picked != null) {
                         setModalState(() {
-                          fechaReserva = picked;
+                          _fechaReserva = picked;
                         });
                       }
                     },
                     icon: const Icon(Icons.calendar_month, color: Color(0xFF38BDF8)),
                     label: Text(
-                      fechaReserva == null
+                      _fechaReserva == null
                           ? '📅 Elegir Fecha de Reserva'
-                          : '📅 Fecha: ${fechaReserva!.day}/${fechaReserva!.month}/${fechaReserva!.year}',
-                      style: TextStyle(color: fechaReserva == null ? Colors.white54 : Colors.greenAccent, fontWeight: FontWeight.bold),
+                          : '📅 Fecha: ${_fechaReserva!.day}/${_fechaReserva!.month}/${_fechaReserva!.year}',
+                      style: TextStyle(color: _fechaReserva == null ? Colors.white54 : Colors.greenAccent, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ),
@@ -859,14 +859,14 @@ class _AreasComunesListScreenState extends State<AreasComunesListScreen> {
                       final picked = await picker.pickImage(source: ImageSource.gallery);
                       if (picked != null) {
                         setModalState(() {
-                          voucherImage = picked;
+                          _voucherImage = picked;
                         });
                       }
                     },
                     icon: const Icon(Icons.photo_library, size: 18),
-                    label: Text(voucherImage == null ? '📷 SUBIR COMPROBANTE' : '✔ Comprobante Adjuntado'),
+                    label: Text(_voucherImage == null ? '📷 SUBIR COMPROBANTE' : '✔ Comprobante Adjuntado'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: voucherImage == null ? const Color(0xFF334155) : Colors.green,
+                      backgroundColor: _voucherImage == null ? const Color(0xFF334155) : Colors.green,
                       foregroundColor: Colors.white,
                     ),
                   ),
