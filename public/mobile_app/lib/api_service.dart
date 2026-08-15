@@ -153,7 +153,7 @@ static Future<Map<String, dynamic>> reservarAreaComun(
   static Future<Map<String, dynamic>> eliminarMarketplace(String token, String id) async {
     try {
       final res = await http.delete(
-       Uri.parse('https://admin.livo.com.pe/api/v1/vecino/marketplace/$id')
+        Uri.parse('https://admin.livo.com.pe/api/v1/vecino/marketplace/$id'),
         headers: _headers(token),
       );
       return jsonDecode(res.body);
