@@ -234,4 +234,13 @@ static Future<Map<String, dynamic>> reservarAreaComun(
         'Accept': 'application/json',
         'Authorization': 'Bearer $token',
       };
+
+      static Future<Map<String, dynamic>> getCamara(String token) async {
+    try {
+      final res = await http.get(Uri.parse('$baseUrl/vecino/camara'), headers: _headers(token));
+      return jsonDecode(res.body);
+    } catch (e) {
+      return {'success': false};
+    }
+  }
 }

@@ -124,7 +124,7 @@ class _MarketplaceListScreenState extends State<MarketplaceListScreen> {
     else setState(() => _isLoading = false);
   }
 
-  void _abrirWhatsApp(String telefono, String tituloProducto) async {
+  void _abrirwhatsApp(String telefono, String tituloProducto) async {
     final cleanPhone = telefono.replaceAll(RegExp(r'[^\d]'), '');
     final phone = cleanPhone.startsWith('51') ? cleanPhone : '51$cleanPhone';
     final mensaje = Uri.encodeComponent('¡Hola! Vi tu publicación "$tituloProducto" en el Marketplace de LIVO Vecinos.');
@@ -792,8 +792,8 @@ class _AreasComunesListScreenState extends State<AreasComunesListScreen> {
   }
 
   void _modalReservar(dynamic area) {
-    DateTime? fechaReserva;
-    XFile? voucherImage;
+    DateTime? _fechaReserva;
+    XFile? _voucherImage;
 
     showDialog(
       context: context,
