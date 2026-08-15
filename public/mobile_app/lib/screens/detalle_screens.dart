@@ -256,7 +256,7 @@ class _MarketplaceListScreenState extends State<MarketplaceListScreen> {
                       children: [
                         Expanded(
                           child: ElevatedButton.icon(
-                            onPressed: () => _abrirWhatsapp(item['telefono_whatsapp'] ?? '987654321', item['producto'] ?? 'Producto'),
+                            onPressed: () => _abrirwhatsapp(item['telefono_whatsapp'] ?? '987654321', item['producto'] ?? 'Producto'),
                             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF25D366)),
                             icon: const Icon(Icons.chat, color: Colors.white, size: 18),
                             label: const Text('Contactar por WhatsApp', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
