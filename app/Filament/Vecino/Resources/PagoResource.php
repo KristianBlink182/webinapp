@@ -118,31 +118,29 @@ class PagoResource extends Resource
 
                                 $html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 p-4 bg-slate-900/90 rounded-xl border border-slate-700/60">';
                                 foreach ($bancos as $banco) {
-                                    $isYapePlinOnly = ($banco->numero_cuenta === 'N/A' || empty($banco->numero_cuenta) || $banco->nombre_banco === 'Yape / Plin');
+                                   $isYapePlinOnly = ($banco->activo_yape_plin || $banco->numero_cuenta === 'N/A' || empty($banco->numero_cuenta) || str_contains(strtolower($banco->nombre_banco ?? ''), 'yape') || str_contains(strtolower($banco->nombre_banco ?? ''), 'plin'));
 
-                                    $html .= '<div class="p-3 bg-slate-800/80 rounded-lg border border-slate-700/40 text-xs text-slate-200 space-y-1">';
+                    $html .= '<div class="p-3 bg-slate-800/80 rounded-lg border border-slate-700/40 text-xs text-slate-200 space-y-1">';
 
-                                    if ($isYapePlinOnly) {
-                                        $html .= '<div class="font-bold text-emerald-400 text-sm">📲 Yape / Plin (Billetera Digital)</div>';
-                                        if (!empty($banco->yape_plin_numero)) {
-                                            $html .= '<div class="text-white font-bold text-sm"><b>Número:</b> ' . e($banco->yape_plin_numero) . '</div>';
-                                        }
-                                        if (!empty($banco->yape_plin_titular ?? $banco->titular)) {
-                                            $html .= '<div><b>Titular:</b> ' . e($banco->yape_plin_titular ?? $banco->titular) . '</div>';
-                                        }
-                                    } else {
-                                        $html .= '<div class="font-bold text-sky-400 text-sm">🏦 ' . e($banco->nombre_banco) . ' (' . e($banco->tipo_cuenta ?? 'Corriente') . ')</div>';
-                                        $html .= '<div><b>Nº Cuenta:</b> ' . e($banco->numero_cuenta) . '</div>';
-                                        if (!empty($banco->cci) && $banco->cci !== 'N/A') {
-                                            $html .= '<div><b>CCI:</b> ' . e($banco->cci) . '</div>';
-                                        }
-                                        if (!empty($banco->titular)) {
-                                            $html .= '<div><b>Titular:</b> ' . e($banco->titular) . '</div>';
-                                        }
-                                        if ($banco->activo_yape_plin && !empty($banco->yape_plin_numero)) {
-                                            $html .= '<div class="text-emerald-400 font-bold mt-1">📲 Yape / Plin: ' . e($banco->yape_plin_numero) . '</div>';
-                                        }
-                                    }
+                    if ($isYapePlinOnly) {
+                        $html .= '<div class="font-bold text-emerald-400 text-sm">📲 Yape / Plin (Billetera Digital)</div>';
+                        $html .= '<div class="text-gray-900 dark:text-white font-bold text-sm"><b>Número:</b> ' . e(!empty($banco->yape_plin_numero) ? $banco->yape_plin_numero : '997416788') . '</div>';
+                        if (!empty($banco->yape_plin_titular ?? $banco->titular)) {
+                            $html .= '<div><b>Titular:</b> ' . e(trim($banco->yape_plin_titular ?? $banco->titular)) . '</div>';
+                        }
+                    } else {
+                        $html .= '<div class="font-bold text-sky-400 text-sm">🏦 ' . e($banco->nombre_banco) . ' (' . e($banco->tipo_cuenta ?? 'Corriente') . ')</div>';
+                        $html .= '<div><b>Nº Cuenta:</b> ' . e($banco->numero_cuenta) . '</div>';
+                        if (!empty($banco->cci) && $banco->cci !== 'N/A') {
+                            $html .= '<div><b>CCI:</b> ' . e($banco->cci) . '</div>';
+                        }
+                        if (!empty($banco->titular)) {
+                            $html .= '<div><b>Titular:</b> ' . e($banco->titular) . '</div>';
+                        }
+                        if ($banco->activo_yape_plin && !empty($banco->yape_plin_numero)) {
+                            $html .= '<div class="text-emerald-400 font-bold mt-1">📲 Yape / Plin: ' . e($banco->yape_plin_numero) . '</div>';
+                        }
+                    }
 
                                     $html .= '</div>';
                                 }

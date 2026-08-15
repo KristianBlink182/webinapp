@@ -135,52 +135,73 @@ class _MarketplaceListScreenState extends State<MarketplaceListScreen> {
     }
   }
 
-  void _modalPublicar() {
+ void _modalPublicar() {
     final _pCtrl = TextEditingController();
     final _precioCtrl = TextEditingController();
     final _telfCtrl = TextEditingController();
     final _dCtrl = TextEditingController();
+    XFile? _imagenSeleccionada;
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF0F172A),
-        title: const Text('🛒 Publicar Producto', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TextField(controller: _pCtrl, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(hintText: 'Nombre del producto / servicio', hintStyle: TextStyle(color: Colors.white30))),
-              const SizedBox(height: 8),
-              TextField(controller: _precioCtrl, keyboardType: TextInputType.number, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(hintText: 'Precio (S/)', hintStyle: TextStyle(color: Colors.white30))),
-              const SizedBox(height: 8),
-              TextField(controller: _telfCtrl, keyboardType: TextInputType.phone, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(hintText: 'Teléfono / WhatsApp de contacto', hintStyle: TextStyle(color: Colors.white30))),
-              const SizedBox(height: 8),
-              TextField(controller: _dCtrl, maxLines: 2, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(hintText: 'Descripción del producto...', hintStyle: TextStyle(color: Colors.white30))),
-              const SizedBox(height: 12),
-              OutlinedButton.icon(
-                onPressed: () {},
-                icon: const Icon(Icons.camera_alt, color: Color(0xFFF59E0B)),
-                label: const Text('📸 Adjuntar Foto del Producto', style: TextStyle(color: Color(0xFFF59E0B))),
-              ),
-            ],
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => AlertDialog(
+          backgroundColor: const Color(0xFF0F172A),
+          title: const Text('🛒 Publicar Producto', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(controller: _pCtrl, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(hintText: 'Nombre del producto / servicio', hintStyle: TextStyle(color: Colors.white30))),
+                const SizedBox(height: 8),
+                TextField(controller: _precioCtrl, keyboardType: TextInputType.number, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(hintText: 'Precio (S/)', hintStyle: TextStyle(color: Colors.white30))),
+                const SizedBox(height: 8),
+                TextField(controller: _telfCtrl, keyboardType: TextInputType.phone, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(hintText: 'Teléfono / WhatsApp de contacto', hintStyle: TextStyle(color: Colors.white30))),
+                const SizedBox(height: 8),
+                TextField(controller: _dCtrl, maxLines: 2, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(hintText: 'Descripción del producto...', hintStyle: TextStyle(color: Colors.white30))),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    final picker = ImagePicker();
+                    final picked = await picker.pickImage(source: ImageSource.gallery);
+                    if (picked != null) {
+                      setModalState(() {
+                        _imagenSeleccionada = picked;
+                      });
+                    }
+                  },
+                  icon: Icon(_imagenSeleccionada != null ? Icons.check_circle : Icons.camera_alt, color: const Color(0xFFFF9E00)),
+                  label: Text(_imagenSeleccionada != null ? '📷 Foto Seleccionada' : '📸 Adjuntar Foto del Producto', style: const TextStyle(color: Color(0xFFFF9E00))),
+                ),
+              ],
+            ),
           ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar', style: TextStyle(color: Colors.white54))),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF9E00)),
+              onPressed: () async {
+                if (_pCtrl.text.isEmpty) return;
+                Navigator.pop(ctx);
+                if (mounted) setState(() { _isLoading = true; });
+                final res = await ApiService.registrarMarketplace(
+                  widget.token,
+                  _pCtrl.text.trim(),
+                  _precioCtrl.text.trim(),
+                  _telfCtrl.text.trim(),
+                  _dCtrl.text.trim(),
+                  _imagenSeleccionada != null ? _imagenSeleccionada!.path : null,
+                );
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(backgroundColor: Colors.green, content: Text(res['message'] ?? 'Producto publicado.')));
+                  _cargarData();
+                }
+              },
+              child: const Text('Publicar', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar', style: TextStyle(color: Colors.white54))),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFF59E0B)),
-            onPressed: () async {
-              if (_pCtrl.text.isEmpty) return;
-              Navigator.pop(ctx);
-              setState(() => _isLoading = true);
-              final res = await ApiService.registrarMarketplace(widget.token, _pCtrl.text.trim(), _precioCtrl.text.trim(), _dCtrl.text.trim());
-              if (res['success'] == true) { ScaffoldMessenger.of(context).showSnackBar(SnackBar(backgroundColor: Colors.green, content: Text(res['message']))); _cargar(); }
-            },
-            child: const Text('Publicar'),
-          )
-        ],
       ),
     );
   }

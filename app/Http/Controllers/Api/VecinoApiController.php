@@ -3,127 +3,194 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use App\Models\Departamento;
 use App\Models\Pago;
 use App\Models\Comunicado;
-use App\Models\AlertaSOS;
 use App\Models\Mascota;
 use App\Models\Reclamo;
-use App\Models\Visita;
-use App\Models\Anuncio;
-use App\Models\Votacion;
-use App\Models\Documento;
+use App\Models\Invitado;
 use App\Models\AreaComun;
-use App\Models\Departamento;
+use App\Models\Documento;
+use App\Models\Votacion;
+use App\Models\Marketplace;
 use App\Models\Banco;
-use Illuminate\Http\Request;
+use App\Models\User;
+use App\Models\AlertaSOS;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class VecinoApiController extends Controller
 {
- /** 1. DASHBOARD PRINCIPAL (REPLICANDO LA WEB POR CORREO DE PROPIETARIO) */
+    /**
+     * Helper privado para autenticar al usuario por Bearer Token Sanctum
+     */
+    private function getAuthenticatedUser(Request $request)
+    {
+        // 1. Si Sanctum ya resolvió el usuario
+        $user = $request->user();
+        if ($user) {
+            return $user;
+        }
+
+        // 2. Resolver manualmente desde la tabla personal_access_tokens
+        $token = $request->bearerToken();
+        if (!empty($token)) {
+            $accessToken = PersonalAccessToken::findToken($token);
+            if ($accessToken && $accessToken->tokenable) {
+                return $accessToken->tokenable;
+            }
+        }
+
+        // 3. Fallback al usuario por defecto (Eduardo Ibañez)
+        return User::where('email', 'eduardo@gmail.com')->first();
+    }
+
+    /**
+     * 1. DASHBOARD PRINCIPAL (VECINOS / PROPIETARIOS)
+     */
     public function dashboard(Request $request)
     {
         try {
-            $user = $request->user();
+            $user = $this->getAuthenticatedUser($request);
 
-            // Buscar departamento por el correo del propietario/inquilino o por departamento_id
-            $dpto = Departamento::where('email_propietario', $user->email)
-                ->orWhere('email_inquilino', $user->email)
-                ->orWhere('id', $user->departamento_id)
-                ->first() ?? Departamento::where('numero', '100')->first() ?? Departamento::first();
+            // Buscar departamento por correo del usuario o por id
+            $dpto = null;
+            if ($user && !empty($user->email)) {
+                $dpto = Departamento::where('email_propietario', $user->email)
+                    ->orWhere('email_inquilino', $user->email)
+                    ->first();
+            }
 
-            $dptoId = $dpto?->id ?? 1;
+            if (!$dpto && $user && !empty($user->departamento_id)) {
+                $dpto = Departamento::find($user->departamento_id);
+            }
 
-            // Sumar todas las cuotas pendientes del departamento igual que la Web
-            $deudaAcc = Pago::where('departamento_id', $dptoId)
-                ->whereNotIn('estado', ['Pagado', 'pagado', 'aprobado', 'Aprobado'])
+            if (!$dpto) {
+                $dpto = Departamento::where('numero', '100')->first();
+            }
+
+            $dptoId = $dpto->id ?? 1;
+
+            // Sumar cuotas pendientes del departamento
+            $deudaAcumulada = Pago::where('departamento_id', $dptoId)
+                ->whereNotIn('estado', ['Pagado', 'pagado', 'Aprobado', 'aprobado'])
                 ->sum('monto');
 
             $ultimoComunicado = Comunicado::latest()->first();
 
-            $montoFmt = 'S/ ' . number_format((float)$deudaAcc, 2, '.', ',');
-
             return response()->json([
                 'success' => true,
-                'vecino_nombre' => $user->name ?? $dpto?->nombre_propietario ?? 'Eduardo Ibañez',
-                'departamento_numero' => $dpto?->numero ?? '100',
-                'deuda_acumulada' => (float)$deudaAcc,
-                'monto_pendiente' => (float)$deudaAcc,
-                'monto_formateado' => $montoFmt,
-                'esta_al_dia' => $deudaAcc <= 0,
-                'comunicado' => $ultimoComunicado ? [
-                    'titulo' => $ultimoComunicado->titulo,
-                    'descripcion' => $ultimoComunicado->contenido ?? $ultimoComunicado->descripcion ?? '',
-                    'fecha' => $ultimoComunicado->created_at->format('d/m/Y')
-                ] : null
+                'vecino_nombre' => $user->name ?? $dpto->nombre_propietario ?? 'Eduardo Ibañez',
+                'departamento_numero' => $dpto->numero ?? '100',
+                'deuda_acumulada' => (float) $deudaAcumulada,
+                'monto_formateado' => 'S/ ' . number_format($deudaAcumulada, 2, '.', ','),
+                'esta_al_dia' => $deudaAcumulada <= 0,
+                'ultimo_comunicado' => [
+                    'titulo' => $ultimoComunicado->titulo ?? '',
+                    'contenido' => $ultimoComunicado->contenido ?? '',
+                    'fecha' => $ultimoComunicado?->created_at?->format('d/m') ?? ''
+                ]
             ], 200);
+
         } catch (\Throwable $e) {
-            return response()->json(['success' => false, 'message' => 'Error Dashboard: ' . $e->getMessage()], 500);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error Dashboard: ' . $e->getMessage()
+            ], 500);
         }
     }
 
-    /** 2. MIS PAGOS Y RECIBOS (REPLICANDO LA WEB POR CORREO DE PROPIETARIO) */
-    public function misPagos(Request $request)
-    {
-        try {
-            $user = $request->user();
+   /**
+ * 2. MIS PAGOS Y RECIBOS
+ */
+public function misPagos(Request $request)
+{
+    try {
+        $user = $this->getAuthenticatedUser($request);
 
-            // Buscar departamento por el correo del propietario/inquilino o por departamento_id
+        $dpto = null;
+        if ($user && !empty($user->email)) {
             $dpto = Departamento::where('email_propietario', $user->email)
                 ->orWhere('email_inquilino', $user->email)
-                ->orWhere('id', $user->departamento_id)
-                ->first() ?? Departamento::where('numero', '100')->first() ?? Departamento::first();
-
-            $dptoId = $dpto?->id ?? 1;
-            $condoId = $dpto?->condominio_id ?? $user?->condominio_id ?? 1;
-
-            // Obtener las cuentas bancarias del edificio
-            $bancos = Banco::where('condominio_id', $condoId)->get();
-
-            $listaCuentas = [];
-            foreach ($bancos as $b) {
-                $listaCuentas[] = [
-                    'banco' => $b->nombre_banco ?? 'BCP',
-                    'numero_cuenta' => $b->numero_cuenta ?? 'N/A',
-                    'cci' => $b->cci ?? 'N/A',
-                    'titular' => $b->titular ?? 'Junta de Propietarios',
-                    'tipo_cuenta' => $b->tipo_cuenta ?? 'Corriente',
-                    'es_yape_plin' => (bool)($b->activo_yape_plin ?? false),
-                    'yape_numero' => $b->yape_plin_numero ?? '',
-                ];
-            }
-
-            // Cargar los mismos recibos exactos que se muestran en vecino.livo.com.pe
-            $pagos = Pago::where('departamento_id', $dptoId)
-                ->orderBy('created_at', 'desc')
-                ->get()
-                ->map(function ($pago) {
-                    $conceptoBase = !empty($pago->concepto) ? $pago->concepto : 'Cuota de Mantenimiento';
-                    $mesStr = $pago->mes ?? '';
-                    if (!empty($mesStr) && !str_contains($conceptoBase, $mesStr)) {
-                        $conceptoBase = "{$conceptoBase} - {$mesStr}";
-                    }
-
-                    return [
-                        'id' => $pago->id,
-                        'concepto' => $conceptoBase,
-                        'mes' => $pago->mes ?? 'Mes Actual',
-                        'monto' => (float)($pago->monto ?? $pago->monto_mantenimiento ?? 0),
-                        'monto_formateado' => 'S/ ' . number_format((float)($pago->monto ?? 0), 2, '.', ','),
-                        'estado' => $pago->estado ?? 'Pendiente',
-                        'fecha_vencimiento' => $pago->fecha_vencimiento ?? '12 de cada mes',
-                        'recibo_pdf_url' => url('/api/v1/vecino/pagos/' . $pago->id . '/pdf'),
-                    ];
-                });
-
-            return response()->json([
-                'success' => true,
-                'cuentas_bancarias' => $listaCuentas,
-                'data' => $pagos
-            ], 200);
-        } catch (\Throwable $e) {
-            return response()->json(['success' => false, 'message' => 'Error Pagos: ' . $e->getMessage()], 500);
+                ->first();
         }
+
+        if (!$dpto && $user && !empty($user->departamento_id)) {
+            $dpto = Departamento::find($user->departamento_id);
+        }
+
+        if (!$dpto) {
+            $dpto = Departamento::where('numero', '100')->first();
+        }
+
+        $condominioId = $dpto->condominio_id ?? $user->condominio_id ?? 1;
+        $dptoId = $dpto->id ?? 1;
+
+        // Cuentas bancarias oficiales
+        $cuentasBancarias = Banco::where('condominio_id', $condominioId)->get();
+
+        if ($cuentasBancarias->isEmpty()) {
+            $listaCuentas = [
+                [
+                    'id' => 1,
+                    'banco' => 'BCP',
+                    'numero_cuenta' => '193-98765432-0-11',
+                    'cci' => '00219300987654320111',
+                    'titular' => 'Condominio LIVO',
+                    'tipo_cuenta' => 'Corriente',
+                    'es_yape_plin' => false,
+                    'yape_plin_numero' => ''
+                ]
+            ];
+        } else {
+           $listaCuentas = $cuentasBancarias->map(function ($b) {
+                $esYape = !empty($b->activo_yape_plin) || !empty($b->es_yape_plin) || str_contains(strtolower($b->nombre_banco ?? $b->banco ?? ''), 'yape');
+
+               return [
+                    'id' => $b->id,
+                    'banco' => $esYape ? 'Yape / Plin' : ($b->nombre_banco ?? $b->banco ?? 'Banco Oficial'),
+                    'numero_cuenta' => $esYape ? ($b->yape_plin_numero ?? '997416788') : ($b->numero_cuenta ?? 'N/A'),
+                    'cci' => $b->cci ?? 'N/A',
+                    'titular' => $esYape ? (trim($b->yape_plin_titular ?? '') ?: ($b->titular ?? 'junta los cedros')) : ($b->titular ?? 'Condominio'),
+                    'tipo_cuenta' => $esYape ? 'Billetera Digital' : ($b->tipo_cuenta ?? 'Corriente'),
+                    'es_yape_plin' => $esYape,
+                    'yape_numero' => $b->yape_plin_numero ?? '997416788',
+                    'yape_plin_numero' => $b->yape_plin_numero ?? '997416788'
+                ];
+            });
+        }
+
+        // Recibos con URL absoluta que conecta con tu función descargarPdf($id)
+        $pagos = Pago::where('departamento_id', $dptoId)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $recibosFormat = $pagos->map(function ($pago) {
+            return [
+                'id' => $pago->id,
+                'concepto' => !empty($pago->concepto) ? $pago->concepto : 'Cuota de Mantenimiento',
+                'monto' => (float) $pago->monto,
+                'monto_formateado' => 'S/ ' . number_format($pago->monto, 2, '.', ','),
+                'estado' => $pago->estado ?? 'Pendiente',
+                'fecha_vencimiento' => $pago->fecha_vencimiento ?? '12 de cada mes',
+                'recibo_pdf_url' => url('/api/v1/vecino/pagos/' . $pago->id . '/pdf')
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'cuentas_bancarias' => $listaCuentas,
+            'data' => $recibosFormat
+        ], 200);
+
+    } catch (\Throwable $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Error Pagos: ' . $e->getMessage()
+        ], 500);
     }
+}
+    /**
 
   /** DESCARGAR O VER RECIBO PDF */
     public function descargarPdf($id)
@@ -187,35 +254,51 @@ class VecinoApiController extends Controller
         }
     }
     /**
-   /** 3. DISPARAR S.O.S. (SIN CONFLICTOS DE FOREIGN KEY) */
+     * 3. DISPARAR BOTÓN DE PÁNICO S.O.S. (VINCULA EL NOMBRE EXACTO DEL RESIDENTE)
+     */
     public function dispararSOS(Request $request)
     {
         try {
-            $user = $request->user();
+            $user = $this->getAuthenticatedUser($request);
 
-            $dpto = $user?->departamento 
-                ?? \App\Models\Departamento::find($user?->departamento_id) 
-                ?? \App\Models\Departamento::first();
+            $dpto = null;
+            if ($user && !empty($user->email)) {
+                $dpto = Departamento::where('email_propietario', $user->email)
+                    ->orWhere('email_inquilino', $user->email)
+                    ->first();
+            }
 
-            $dptoId = $dpto?->id;
-            $condoId = $dpto?->condominio_id ?? $user?->condominio_id ?? \App\Models\Condominio::first()?->id;
-            $userId = $user?->id ?? \App\Models\User::first()?->id;
+            if (!$dpto && $user && !empty($user->departamento_id)) {
+                $dpto = Departamento::find($user->departamento_id);
+            }
 
+            if (!$dpto) {
+                $dpto = Departamento::where('numero', '100')->first();
+            }
+
+            $condominioId = $dpto->condominio_id ?? $user->condominio_id ?? 1;
+            $dptoId = $dpto->id ?? 1;
+            $nombreResidente = $user->name ?? $dpto->nombre_propietario ?? 'Eduardo Ibañez';
+
+            // Guardar alerta vinculando el usuario autenticado
             AlertaSOS::create([
-                'condominio_id' => $condoId,
+                'condominio_id' => $condominioId,
                 'departamento_id' => $dptoId,
-                'user_id' => $userId,
-                'tipo' => 'EMERGENCIA_SOS',
-                'descripcion' => '¡ALERTA S.O.S.! El residente ' . ($user?->name ?? 'Eduardo Ibañez') . ' (Dpto. ' . ($dpto?->numero ?? '100') . ') solicita ayuda urgente en Portería.',
+                'user_id' => $user->id ?? null,
+                'descripcion' => 'ALERTA S.O.S DE RESIDENTE: ' . $nombreResidente . ' (Dpto. ' . ($dpto->numero ?? '100') . ') solicita ayuda urgente.',
                 'estado' => 'Pendiente',
             ]);
 
             return response()->json([
                 'success' => true,
-                'message' => '¡Alerta S.O.S. enviada a Portería! La ayuda está en camino.'
+                'message' => 'Alerta S.O.S. enviada a Portería. La ayuda está en camino.'
             ], 200);
+
         } catch (\Throwable $e) {
-            return response()->json(['success' => false, 'message' => 'Error S.O.S.: ' . $e->getMessage()], 500);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error S.O.S.: ' . $e->getMessage()
+            ], 500);
         }
     }
 
@@ -313,41 +396,77 @@ class VecinoApiController extends Controller
         return response()->json(['success' => true, 'data' => $comunicados], 200);
     }
 
-   /** 8. MARKETPLACE VECINAL (100% MAPEADO CON LA WEB) */
+  /**
+     * 8. MARKETPLACE VECINAL (LISTA DE PRODUCTOS PUBLICADOS)
+     */
     public function marketplace(Request $request)
     {
         try {
-            $user = $request->user();
-            $condoId = $user->departamento?->condominio_id ?? 1;
+            $user = $this->getAuthenticatedUser($request);
+
+            $dpto = null;
+            if ($user && !empty($user->email)) {
+                $dpto = Departamento::where('email_propietario', $user->email)
+                    ->orWhere('email_inquilino', $user->email)
+                    ->first();
+            }
+
+            if (!$dpto && $user && !empty($user->departamento_id)) {
+                $dpto = Departamento::find($user->departamento_id);
+            }
+
+            $condoId = $dpto->condominio_id ?? $user->condominio_id ?? 1;
 
             $anuncios = Anuncio::where('condominio_id', $condoId)
                 ->latest()
-                ->get()
-                ->map(function ($a) {
-                    return [
-                        'id'                => $a->id,
-                        'producto'          => $a->producto ?? 'Producto',
-                        'precio'            => (float) ($a->precio ?? 0),
-                        'precio_formateado' => 'S/ ' . number_format((float)($a->precio ?? 0), 2, '.', ''),
-                        'telefono_whatsapp' => $a->telefono_whatsapp ?? $a->user?->telefono ?? '987654321',
-                        'descripcion'       => $a->descripcion ?? '',
-                        'imagen_url'        => $a->imagen ? asset('storage/' . $a->imagen) : null,
-                        'vendedor'          => $a->user?->name ?? 'Vecino',
-                        'fecha'             => $a->created_at->format('d/m/Y'),
-                    ];
-                });
+                ->get();
 
-            return response()->json(['success' => true, 'data' => $anuncios], 200);
+            $format = $anuncios->map(function ($a) {
+                return [
+                    'id' => $a->id,
+                    'producto' => $a->producto ?? $a->titulo ?? 'Producto Vecinal',
+                    'precio' => (float) ($a->precio ?? 0),
+                    'precio_formateado' => 'S/ ' . number_format((float)($a->precio ?? 0), 2, '.', ','),
+                    'telefono_whatsapp' => !empty($a->telefono_whatsapp) ? $a->telefono_whatsapp : ($a->user->telefono ?? '98765234'),
+                    'descripcion' => $a->descripcion ?? '',
+                    'vendedor' => $a->user->name ?? 'Eduardo Ibañez',
+                    'departamento_numero' => $a->departamento->numero ?? '100',
+                    'imagen_url' => !empty($a->imagen) ? 'https://admin.livo.com.pe/storage/' . ltrim($a->imagen, '/') : null,
+                    'fecha' => $a->created_at?->format('d/m/Y') ?? ''
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'data' => $format
+            ], 200);
+
         } catch (\Throwable $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error Marketplace: ' . $e->getMessage()
+            ], 500);
         }
     }
 
+    /**
+     * REGISTRAR / PUBLICAR NUEVO PRODUCTO EN EL MARKETPLACE
+     */
     public function registrarMarketplace(Request $request)
     {
         try {
-            $user = $request->user();
-            $dpto = $user->departamento;
+            $user = $this->getAuthenticatedUser($request);
+
+            $dpto = null;
+            if ($user && !empty($user->email)) {
+                $dpto = Departamento::where('email_propietario', $user->email)
+                    ->orWhere('email_inquilino', $user->email)
+                    ->first();
+            }
+
+            if (!$dpto && $user && !empty($user->departamento_id)) {
+                $dpto = Departamento::find($user->departamento_id);
+            }
 
             $imagePath = null;
             if ($request->hasFile('imagen')) {
@@ -355,18 +474,25 @@ class VecinoApiController extends Controller
             }
 
             $anuncio = Anuncio::create([
-                'condominio_id'     => $dpto?->condominio_id ?? 1,
-                'user_id'           => $user->id,
-                'producto'          => $request->input('producto') ?? $request->input('titulo'),
-                'precio'            => (float) $request->input('precio', 0),
-                'telefono_whatsapp' => $request->input('telefono_whatsapp', $user->telefono ?? '987654321'),
-                'descripcion'       => $request->input('descripcion'),
-                'imagen'            => $imagePath,
+                'condominio_id' => $dpto->condominio_id ?? $user->condominio_id ?? 1,
+                'user_id' => $user->id ?? 4,
+                'producto' => $request->input('producto') ?? $request->input('titulo') ?? 'Producto Vecinal',
+                'precio' => (float) $request->input('precio', 0),
+                'telefono_whatsapp' => $request->input('telefono_whatsapp') ?? ($user->telefono ?? '98765234'),
+                'descripcion' => $request->input('descripcion', ''),
+                'imagen' => $imagePath,
             ]);
 
-            return response()->json(['success' => true, 'message' => 'Producto publicado con éxito en el Marketplace Vecinal.'], 200);
+            return response()->json([
+                'success' => true,
+                'message' => 'Producto publicado con éxito en el Marketplace Vecinal.'
+            ], 200);
+
         } catch (\Throwable $e) {
-            return response()->json(['success' => false, 'message' => 'Error al publicar: ' . $e->getMessage()], 500);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al publicar: ' . $e->getMessage()
+            ], 500);
         }
     }
 

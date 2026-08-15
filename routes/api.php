@@ -36,6 +36,7 @@ Route::prefix('v1')->group(function () {
     Route::post('/vecino/pagos/reportar', [VecinoApiController::class, 'reportarPago']);
     Route::get('/vecino/pagos/{id}/pdf', [VecinoApiController::class, 'descargarPdf']);
 
+
     // Invitados (Portería)
     Route::get('/vecino/invitados', [VecinoApiController::class, 'invitados']);
     Route::post('/vecino/invitados', [VecinoApiController::class, 'registrarInvitado']);

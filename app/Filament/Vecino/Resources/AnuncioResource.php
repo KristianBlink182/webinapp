@@ -157,9 +157,10 @@ class AnuncioResource extends Resource
             ->columns([
                 Tables\Columns\Layout\Stack::make([
                     // 🎯 FIX DE IMAGEN COMPLETA EXPANDIDA
-                    Tables\Columns\ImageColumn::make('imagen')
-                        ->disk('public')
-                        ->extraImgAttributes(['style' => 'width: 100%; height: 180px; object-fit: cover; border-radius: 1rem 1rem 0 0;']),
+                  Tables\Columns\ImageColumn::make('imagen')
+                            ->disk('public')
+                            ->state(fn ($record) => !empty($record->imagen) ? "https://admin.livo.com.pe/storage/" . ltrim($record->imagen, '/') : null)
+                            ->extraImgAttributes(['style' => 'width: 100%; height: 180px; object-fit: cover; border-radius: 1rem 1rem 0 0;']),
 
                     Tables\Columns\Layout\Stack::make([
                         Tables\Columns\TextColumn::make('producto')
