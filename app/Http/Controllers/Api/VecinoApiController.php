@@ -537,6 +537,27 @@ public function misPagos(Request $request)
             ], 500);
         }
     }
+    /**
+     * ELIMINAR ANUNCIO DEL MARKETPLACE
+     */
+    public function eliminarMarketplace(Request $request, $id)
+    {
+        try {
+            $user = $this->getAuthenticatedUser($request);
+            $anuncio = Anuncio::find($id);
+
+            if (!$anuncio) {
+                return response()->json(['success' => false, 'message' => 'Anuncio no encontrado.'], 404);
+            }
+
+            $anuncio->delete();
+
+            return response()->json(['success' => true, 'message' => 'Anuncio eliminado con éxito.'], 200);
+
+        } catch (\Throwable $e) {
+            return response()->json(['success' => false, 'message' => 'Error al eliminar: ' . $e->getMessage()], 500);
+        }
+    }
 
     /** 9. VOTACIONES */
     public function votaciones(Request $request)

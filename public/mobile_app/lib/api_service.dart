@@ -150,6 +150,17 @@ static Future<Map<String, dynamic>> reservarAreaComun(
       return {'success': false, 'message': 'Error de red al publicar.'};
     }
   }
+  static Future<Map<String, dynamic>> eliminarMarketplace(String token, String id) async {
+    try {
+      final res = await http.delete(
+        Uri.parse('$baseUrl/vecino/marketplace/$id'),
+        headers: _headers(token),
+      );
+      return jsonDecode(res.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Error de red al eliminar.'};
+    }
+  }
 
   // 9. VOTACIONES
   static Future<Map<String, dynamic>> getVotaciones(String token) async {

@@ -252,15 +252,48 @@ class _MarketplaceListScreenState extends State<MarketplaceListScreen> {
                           const SizedBox(height: 8),
                           Text('Vendedor: ${item['vendedor']}', style: const TextStyle(color: Colors.white54, fontSize: 12)),
                           const SizedBox(height: 12),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton.icon(
-                              onPressed: () => _abrirWhatsApp(item['telefono_whatsapp'] ?? '987654321', item['producto'] ?? 'Producto'),
-                              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF25D366)),
-                              icon: const Icon(Icons.chat, color: Colors.white, size: 18),
-                              label: const Text('💬 Contactar por WhatsApp', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                            ),
+                         Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () => _abrirWhatsapp(item['telefono_whatsapp'] ?? '987654321', item['producto'] ?? 'Producto'),
+                            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF25D366)),
+                            icon: const Icon(Icons.chat, color: Colors.white, size: 18),
+                            label: const Text('Contactar por WhatsApp', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                           ),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                          onPressed: () async {
+                            final confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                backgroundColor: const Color(0xFF0F172A),
+                                title: const Text('¿Eliminar Anuncio?', style: TextStyle(color: Colors.white)),
+                                content: const Text('¿Estás seguro de quitar este producto del Marketplace?', style: TextStyle(color: Colors.white70)),
+                                actions: [
+                                  TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar', style: TextStyle(color: Colors.white54))),
+                                  ElevatedButton(
+                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                                    onPressed: () => Navigator.pop(ctx, true),
+                                    child: const Text('Eliminar', style: TextStyle(color: Colors.white)),
+                                  ),
+                                ],
+                              ),
+                            );
+
+                            if (confirm == true) {
+                              final res = await ApiService.eliminarMarketplace(widget.token, item['id'].toString());
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(backgroundColor: Colors.red, content: Text(res['message'] ?? 'Anuncio eliminado.')));
+                                _cargar();
+                              }
+                            }
+                          },
+                        ),
+                      ],
+                    )
                         ],
                       ),
                     );

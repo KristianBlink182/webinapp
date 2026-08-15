@@ -50,6 +50,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/vecino/comunicados', [VecinoApiController::class, 'comunicados']);
     Route::get('/vecino/marketplace', [VecinoApiController::class, 'marketplace']);
     Route::post('/vecino/marketplace', [VecinoApiController::class, 'registrarMarketplace']);
+    Route::delete('/vecino/marketplace/{id}', [VecinoApiController::class, 'eliminarMarketplace']);
     Route::get('/vecino/votaciones', [VecinoApiController::class, 'votaciones']);
     Route::get('/vecino/documentos', [VecinoApiController::class, 'documentos']);
 
