@@ -648,7 +648,7 @@ class _ReclamosListScreenState extends State<ReclamosListScreen> {
   }
 }
 
-// 8. CÁMARA EN VIVO DE SEGURIDAD (REPRODUCCIÓN DENTRO DE LA APP)
+// 8. CÁMARA EN VIVO DE SEGURIDAD (REPRODUCCIÓN COMPATIBLE CON IOS)
 class CamaraScreen extends StatefulWidget {
   final String token;
   const CamaraScreen({Key? key, required this.token}) : super(key: key);
@@ -682,6 +682,16 @@ class _CamaraScreenState extends State<CamaraScreen> {
     }
   }
 
+  void _abrirCamaraEnVivo() async {
+    if (_streamUrl.isEmpty) return;
+    final Uri url = Uri.parse(_streamUrl);
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.inAppWebView);
+    } else {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -699,43 +709,42 @@ class _CamaraScreenState extends State<CamaraScreen> {
                 children: [
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       color: const Color(0xFF0F172A),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: Colors.white10),
                     ),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.circle, color: Colors.redAccent, size: 12),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                _nombreCamara,
-                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
-                              ),
-                            ),
-                          ],
-                        ),
+                        const Icon(Icons.videocam, color: Colors.redAccent, size: 56),
                         const SizedBox(height: 12),
-                        // REPRODUCTOR EMBEBIDO DENTRO DE LA APP
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: SizedBox(
-                            height: 220,
-                            width: double.infinity,
-                            child: HtmlElementView(
-                              viewType: _streamUrl,
+                        Text(
+                          _nombreCamara,
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                        ),
+                        const SizedBox(height: 6),
+                        const Text(
+                          'Monitoreo en tiempo real de la puerta principal y accesos del condominio.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.white54, fontSize: 13),
+                        ),
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: _abrirCamaraEnVivo,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.redAccent,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            icon: const Icon(Icons.play_circle_fill, color: Colors.white, size: 24),
+                            label: const Text(
+                              '▶️ Ver Cámara en Vivo',
+                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Transmisión en tiempo real de la puerta principal.',
-                          style: TextStyle(color: Colors.white54, fontSize: 11),
                         ),
                       ],
                     ),

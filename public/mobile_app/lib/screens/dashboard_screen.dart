@@ -252,9 +252,9 @@ void _abrirSiriShortcut() async {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-         // Tarjeta Atajo de Voz Siri oculta temporalmente
-/* 
-          // 1. Tarjeta Bienvenida Siri
+         
+ 
+        // 1. Tarjeta Bienvenida
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -268,23 +268,10 @@ void _abrirSiriShortcut() async {
                 Text('👋 ¡Bienvenido, ${widget.vecinoNombre}!', style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
                 Text('Departamento ${widget.departamentoNumero} — ${widget.condominioNombre}', style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 13, fontWeight: FontWeight.w600)),
-                const SizedBox(height: 14),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: _abrirSiriShortcut,
-                    icon: const Icon(Icons.phone_iphone, color: Colors.white, size: 18),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0284C7),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                    label: const Text('📱 Instalar Atajo de Voz Siri (1 Clic)', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
-                  ),
-                ),
               ],
             ),
           ),
-*/
+
           const SizedBox(height: 14),
 
           // 2. Tarjeta Estado de Cuenta
